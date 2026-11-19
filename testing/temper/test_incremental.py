@@ -49,14 +49,14 @@ class Model:
                 BASE + dt.timedelta(minutes=r.randint(0, 360)))
 
     def step(self, i):
-        """Returns (customer updates, order updates) for step i and applies them."""
+        """Returns {table: updates} for step i and applies them."""
         r = self.rng
         cu, ou = [], []
         if i % 13 == 12:  # empty the orders table
             for o in list(self.orders.values()):
                 ou.append({"delete": orow(o)})
             self.orders.clear()
-            return cu, ou
+            return {"customers": cu, "orders": ou}
         n = r.choice([1, 2, 5, 10, 40])
         for _ in range(n):
             x = r.random()
@@ -82,7 +82,7 @@ class Model:
                 if not self.customers[c]:
                     del self.customers[c]
                 cu.append({"delete": crow(c)})
-        return cu, ou
+        return {"customers": cu, "orders": ou}
 
     def load(self, db):
         db.execute("DELETE FROM customers")
@@ -108,42 +108,32 @@ def duck_rows(db, sql):
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
 
-_results = None
-
-
-def results():
-    """Runs every seed once. Returns {view: first mismatch or None} for both reads."""
-    global _results
-    if _results is not None:
-        return _results
-    harness.create(PIPELINE, views.program())
-    content = {v: None for v in views.VIEWS}
-    changes = {v: None for v in views.VIEWS}
-    for seed in SEEDS:
-        harness.reset(PIPELINE)
-        harness.start(PIPELINE)
-        streams = {v: harness.ChangeStream(PIPELINE, v) for v in views.VIEWS}
+def run_program(pipeline, module, model_cls, seeds, steps):
+    """Runs every seed against one program. Returns {view: first mismatch or None} for both reads."""
+    harness.create(pipeline, module.program(), compile_timeout=1200)
+    content = {v: None for v in module.VIEWS}
+    changes = {v: None for v in module.VIEWS}
+    for seed in seeds:
+        harness.reset(pipeline)
+        harness.start(pipeline)
+        streams = {v: harness.ChangeStream(pipeline, v) for v in module.VIEWS}
         for s in streams.values():
             s.start()
             s.ready.wait(30)
         db = duckdb.connect()
-        db.execute(views.DUCK_TABLES)
-        model = Model(random.Random(seed))
+        db.execute(module.DUCK_TABLES)
+        model = model_cls(random.Random(seed))
         try:
-            for i in range(STEPS):
-                cu, ou = model.step(i)
-                tokens = []
-                if cu:
-                    tokens.append(harness.ingest(PIPELINE, "customers", cu))
-                if ou:
-                    tokens.append(harness.ingest(PIPELINE, "orders", ou))
+            for i in range(steps):
+                updates = model.step(i)
+                tokens = [harness.ingest(pipeline, table, ups) for table, ups in updates.items() if ups]
                 for t in tokens:
-                    harness.wait_complete(PIPELINE, t)
+                    harness.wait_complete(pipeline, t)
                 model.load(db)
-                for v in views.VIEWS:
-                    want = harness.bag(duck_rows(db, views.oracle_sql(v)))
+                for v in module.VIEWS:
+                    want = harness.bag(duck_rows(db, module.oracle_sql(v)))
                     if content[v] is None:
-                        got = harness.bag(harness.query(PIPELINE, f"SELECT * FROM {v}"))
+                        got = harness.bag(harness.query(pipeline, f"SELECT * FROM {v}"))
                         d = harness.diff(want, got)
                         if d:
                             content[v] = {"seed": seed, "step": i, **d}
@@ -155,8 +145,17 @@ def results():
         finally:
             for s in streams.values():
                 s.close()
-    harness.stop(PIPELINE, force=True)
-    _results = {"content": content, "changes": changes}
+    harness.stop(pipeline, force=True)
+    return {"content": content, "changes": changes}
+
+
+_results = None
+
+
+def results():
+    global _results
+    if _results is None:
+        _results = run_program(PIPELINE, views, Model, SEEDS, STEPS)
     return _results
 
 

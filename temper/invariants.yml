@@ -21,6 +21,41 @@ invariants:
     class: safety
     family: consistency
     requires: [oss]
+  - id: view.lateness_preserves_output
+    claim: >
+      When every input respects its LATENESS bound, views over those tables hold
+      exactly what the batch query returns. ("the output of the program with
+      lateness annotations is guaranteed to be identical to outputs of the same
+      program without annotations", Time series guide.)
+    applies_to: view
+    class: safety
+    family: consistency
+    requires: [oss]
+  - id: txn.no_output_while_open
+    claim: >
+      "During a transaction, the pipeline ingests incoming data without
+      producing output." (Transactions.)
+    applies_to: txn
+    class: safety
+    family: atomicity
+    requires: [oss]
+  - id: txn.commit_is_one_batch
+    claim: >
+      "Once the commit is complete, the pipeline outputs a batch of updates for
+      every view." A view never receives a commit in pieces.
+    applies_to: txn
+    class: safety
+    family: atomicity
+    requires: [oss]
+  - id: txn.matches_batch_after_commit
+    claim: >
+      "after committing a transaction the contents of all [views] matches all
+      the inputs received so far, including inputs received as part of the
+      transaction." (Transactions.)
+    applies_to: txn
+    class: safety
+    family: atomicity
+    requires: [oss]
   - id: delivery.no_loss
     claim: >
       Every record read from the input topic reaches the output topic while the

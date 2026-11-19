@@ -148,6 +148,7 @@ class ChangeStream(threading.Thread):
         super().__init__(daemon=True)
         self.name, self.view = name, view
         self.state = Counter()
+        self.batches = []  # (sequence_number, number of changes), one per message
         self.lock = threading.Lock()
         self.error = None
         self.ready = threading.Event()
@@ -164,6 +165,8 @@ class ChangeStream(threading.Thread):
                 if not line:
                     continue
                 msg = json.loads(line)
+                with self.lock:
+                    self.batches.append((msg.get("sequence_number"), len(msg.get("json_data") or [])))
                 for change in msg.get("json_data") or []:
                     with self.lock:
                         if "insert" in change:

@@ -98,9 +98,10 @@ def read_range(base, n, timeout, quiet=10):
 
 
 def pipeline_pids():
+    """The pipeline's own process, which the manager names program_<pipeline id>."""
     out = harness.sh("docker", "exec", harness.CONTAINER, "sh", "-c",
-                     'for p in /proc/[0-9]*; do c=$(tr "\\0" " " < $p/cmdline 2>/dev/null); '
-                     'case "$c" in *pipeline-manager*|*postgres*|"") ;; *) echo ${p#/proc/};; esac; done').stdout
+                     'for p in /proc/[0-9]*; do case "$(cat $p/comm 2>/dev/null)" in program_*) '
+                     'grep -q "^State:.*Z" $p/status || echo ${p#/proc/};; esac; done').stdout
     return out.split()
 
 
