@@ -4,6 +4,7 @@ connector.http: {oss: covered}
 connector.kafka: {oss: covered}
 connector.postgres: {oss: covered}
 input.errors: {oss: covered}
+runtime.workers: {oss: covered}
 sql.adhoc: {oss: covered}
 sql.aggregate: {oss: covered}
 sql.asof: {oss: covered}

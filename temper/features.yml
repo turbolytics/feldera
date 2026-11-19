@@ -60,3 +60,6 @@ features:
   - id: connector.postgres
     description: The PostgreSQL output connector in materialized mode (PostgreSQL output connector, experimental).
     requires: [oss]
+  - id: runtime.workers
+    description: The workers setting runs a pipeline on that many threads. It can change only while storage is cleared (Pipeline configuration).
+    requires: [oss]

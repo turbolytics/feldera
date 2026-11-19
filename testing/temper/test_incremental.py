@@ -109,13 +109,15 @@ def duck_rows(db, sql):
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
 
-def run_program(pipeline, module, model_cls, seeds, steps):
-    """Runs every seed against one program. Returns {view: first mismatch or None} for both reads."""
+def run_program(pipeline, module, model_cls, seeds, steps, workers=4):
+    """Runs every seed against one program at the given worker count.
+    Returns {view: first mismatch or None} for both reads."""
     harness.create(pipeline, module.program(), compile_timeout=1200)
     content = {v: None for v in module.VIEWS}
     changes = {v: None for v in module.VIEWS}
     for seed in seeds:
         harness.reset(pipeline)
+        harness.set_workers(pipeline, workers)
         harness.start(pipeline)
         streams = {v: harness.ChangeStream(pipeline, v) for v in module.VIEWS}
         for s in streams.values():

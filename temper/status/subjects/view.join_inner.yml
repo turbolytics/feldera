@@ -2,3 +2,5 @@
 # One line per invariant or lattice member that applies to view.join_inner, sorted by id: the status at each level.
 view.changes_add_up: {oss: covered}
 view.matches_batch: {oss: covered}
+workers.contract/w1: {oss: covered}
+workers.contract/w8: {oss: covered}

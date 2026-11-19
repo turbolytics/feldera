@@ -1,3 +1,7 @@
 id: view.aggregate
 kind: view
 feature: sql.aggregate
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

@@ -1,3 +1,7 @@
 id: view.join_left
 kind: view
 feature: sql.join
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

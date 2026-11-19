@@ -39,7 +39,7 @@ N, RATE, RECOVERY = 10000, 2000, 60
 TIMEOUT_MS = "10000"  # librdkafka default 60000
 SECONDS = {"pause_api": 4, "process_pause": 6, "broker_pause": 6, "network_cut": 6,
            "long_broker_pause": 15, "long_network_cut": 15}
-FAULTS = ["pause_api", "process_pause", "broker_pause", "network_cut", "long_broker_pause", "long_network_cut", "stop_and_resume"]
+FAULTS = ["pause_api", "process_pause", "broker_pause", "network_cut", "long_broker_pause", "long_network_cut"]
 
 
 def program():
@@ -148,10 +148,6 @@ def inject(fault, rng):
         time.sleep(secs)
         harness.sh("docker", "network", "connect", "--alias", "kafka", harness.NETWORK, BROKER)
         return f"cut the pipeline from Kafka for {secs}s"
-    if fault == "stop_and_resume":
-        harness.stop(PIPELINE, force=False)
-        harness.start(PIPELINE)
-        return "stopped gracefully, then started"
     raise ValueError(fault)
 
 
@@ -205,10 +201,6 @@ def test_fault_keeps_every_delivery_invariant(fault):
     r = result(fault)
     assert not r["missing"], f"{len(r['missing'])} of {N} missing, e.g. {r['missing'][:10]}; {r['log']}"
     assert r["reached"] and r["state"] == "Running", f"no recovery; state {r['state']}"
-    if fault == "stop_and_resume":
-        # "it uses the checkpoint to resume from the exact point where it left
-        # off, without dropping or duplicating input or output."
-        assert not r["dupes"], f"{r['dupes']} records duplicated across a graceful stop; {r['log']}"
 
 
 @pytest.mark.parametrize("fault", [pytest.param(f, marks=[
@@ -224,12 +216,3 @@ def test_recovers(fault):
     r = result(fault)
     assert r["reached"] and r["state"] == "Running", \
         f"output did not catch up within {RECOVERY}s; state {r['state']}; {r['log']}"
-
-
-@pytest.mark.covers("delivery.no_duplicates", subject="path.kafka_kafka")
-def test_graceful_stop_duplicates_nothing():
-    """A graceful stop checkpoints before it deprovisions (pipelines/lifecycle.md),
-    and the start resumes from it. The docs promise no duplicates only there; for
-    the other faults the pipeline never restarts, and duplicates are reported."""
-    r = result("stop_and_resume")
-    assert not r["dupes"], f"{r['dupes']} records duplicated across a graceful stop; {r['log']}"

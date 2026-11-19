@@ -1,3 +1,7 @@
 id: view.grouping
 kind: view
 feature: sql.grouping
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

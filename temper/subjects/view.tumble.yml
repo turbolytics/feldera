@@ -1,3 +1,7 @@
 id: view.tumble
 kind: view
 feature: sql.tumble
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

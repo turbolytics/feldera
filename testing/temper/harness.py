@@ -111,8 +111,13 @@ def start(name, timeout=300):
 
 
 def stop(name, force=True, timeout=180):
-    requests.post(f"{API}/pipelines/{name}/stop", params={"force": str(force).lower()}, timeout=30)
-    wait_for(lambda: (pipeline(name) or {}).get("deployment_status") == "Stopped", timeout)
+    """Stops a pipeline. Raises if the API refuses or the stop never finishes.
+    (The community edition refuses a graceful stop, force=False, with a 501.)"""
+    r = requests.post(f"{API}/pipelines/{name}/stop", params={"force": str(force).lower()}, timeout=30)
+    if not r.ok:
+        raise RuntimeError(f"stop {name} force={force}: {r.status_code} {r.text[:300]}")
+    if not wait_for(lambda: (pipeline(name) or {}).get("deployment_status") == "Stopped", timeout):
+        raise RuntimeError(f"stop {name}: still {(pipeline(name) or {}).get('deployment_status')} after {timeout}s")
 
 
 def reset(name):
@@ -121,6 +126,17 @@ def reset(name):
     requests.post(f"{API}/pipelines/{name}/clear", timeout=30)
     if not wait_for(lambda: (pipeline(name) or {}).get("storage_status") == "Cleared", 120):
         raise RuntimeError(f"clear {name}: storage {(pipeline(name) or {}).get('storage_status')}")
+
+
+def set_workers(name, n):
+    """Sets the worker count. Feldera allows it only while storage is cleared,
+    so call it after reset(). The compiled program is reused."""
+    r = requests.patch(f"{API}/pipelines/{name}", json={"runtime_config": {"workers": n}}, timeout=30)
+    if not r.ok:
+        raise RuntimeError(f"set workers {name}={n}: {r.status_code} {r.text[:300]}")
+    got = (pipeline(name) or {}).get("runtime_config", {}).get("workers")
+    if got != n:
+        raise RuntimeError(f"set workers {name}={n}: pipeline reports {got}")
 
 
 def ingest(name, table, updates):
@@ -267,7 +283,7 @@ class SleepGuard:
 
 from concurrent.futures import ThreadPoolExecutor
 
-_pool = ThreadPoolExecutor(max_workers=10)
+_pool = ThreadPoolExecutor(max_workers=16)
 _futures = {}
 _futures_lock = threading.Lock()
 

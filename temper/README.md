@@ -8,7 +8,7 @@ This map checks Feldera's documented guarantees in the open-source edition,
 ```sh
 docker network create temper-feldera
 docker network create temper-feldera-ext
-docker run -d --name temper-feldera --network temper-feldera --memory 3g --cpus 4 \
+docker run -d --name temper-feldera --network temper-feldera --memory 5g --cpus 8 \
   -p 26080:8080 images.feldera.com/feldera/pipeline-manager:0.383.0
 docker run -d --name temper-feldera-kafka --network temper-feldera-ext --memory 1g -p 26092:29092 \
   -e KAFKA_NODE_ID=1 -e KAFKA_PROCESS_ROLES=broker,controller \
@@ -30,8 +30,9 @@ temper matrix --all-levels
 ```
 
 Compiling each program takes about five minutes the first time. The session
-compiles all seven programs at once, and the stopped container keeps them, so
-later runs skip compiling.
+compiles all eight programs at once, and the stopped container keeps them, so
+later runs skip compiling. The six worker-count pipelines reuse three of those
+programs and compile in about a minute each.
 
 ## What the tests do
 
@@ -40,6 +41,16 @@ later runs skip compiling.
   compare every materialized view with DuckDB running the same query from
   scratch. Each view is read two ways: an ad-hoc SELECT, and the sum of its
   HTTP change stream.
+- `test_churn.py` does the same with `views_churn.py`, where deletes and
+  updates are as common as inserts. A primary-key table gets upserts,
+  deletes and updates of missing keys, and several writes to one key in a
+  single request. A table without a key gets many identical rows, and deletes
+  of each group's current MIN or MAX. A recursive view gets edges removed as
+  often as added. Tables drain to empty, or are replaced in one request.
+- `test_workers.py` runs the three random-input programs again at 1 worker
+  and at 8, on their own pipelines, with the same oracle. The default runs use
+  4 workers. Worker count is a runtime setting, and the batch promise names no
+  exception for it.
 - `test_transactions.py` checks that nothing leaves an open transaction, and
   that each commit reaches a view as one batch.
 - `test_kafka.py` copies a Kafka topic through pauses, broker outages and
@@ -63,7 +74,11 @@ The Kafka faults are scaled down with the clocks they cross:
 | pause and resume | 10 s | 4 s | pause through the API |
 
 Crash recovery needs fault tolerance, which is Enterprise-only, so the map
-marks those faults unsupported.
+marks those faults unsupported. So is a graceful stop: the lifecycle page
+says `stop?force=false` checkpoints, but the community edition answers
+`501 EnterpriseFeature` and keeps running. (An earlier version of this map
+ignored that response and counted a stop that never happened as a resume.
+`harness.stop` now fails on any refused or unfinished stop.)
 
 
 ## Claims audit
@@ -73,7 +88,8 @@ where the map checks it. "Out of scope" names the reason.
 
 | Page | Claim | Map |
 |---|---|---|
-| what-is-feldera.md | Views equal the batch query over the same input | `view.matches_batch` (45 views, plus the recursive view) |
+| what-is-feldera.md | Views equal the batch query over the same input | `view.matches_batch` (45 views, the recursive view, and 19 churn views) |
+| pipelines/configuration.mdx | `workers` is a runtime setting | `workers.contract` (every view at 1 and 8 workers) |
 | connectors/completion-tokens.md | A completed token means outputs reached every sink | `view.changes_add_up`, `pg.mirrors_view` |
 | tutorials/time-series.md | LATENESS does not change output when inputs respect it | `view.lateness_preserves_output`, `late.changes_add_up` |
 | pipelines/transactions.md | No output while a transaction is open; one batch per view on commit; views match all inputs after commit | `txn.no_output_while_open`, `txn.commit_is_one_batch`, `txn.matches_batch_after_commit` |
@@ -89,7 +105,7 @@ where the map checks it. "Out of scope" names the reason.
 | connectors/sinks/kafka.md | Without fault tolerance, broker failures are retried without a delivery deadline | `delivery.no_loss`, `delivery.recovers` |
 | connectors/sinks/kafka.md | Same-key messages go to one partition in order | out of scope: exactly-once fault tolerance only (Enterprise) |
 | connectors/sources/kafka.md | `synchronize_partitions` reads in timestamp order across partitions | not tested in this pass; off by default, and the docs say the default can reorder |
-| pipelines/lifecycle.md | A graceful stop checkpoints, and the start resumes | `faults.contract/stop_and_resume`, `delivery.no_duplicates` |
+| pipelines/lifecycle.md | A graceful stop checkpoints, and the start resumes | out of scope: the community edition refuses `stop?force=false` with 501 (`faults.contract/stop_and_resume` unsupported and `delivery.no_duplicates` exempt, proven by `test_oss_limits.py`) |
 | pipelines/fault-tolerance.md | Crash recovery without loss or duplicates | out of scope: Enterprise-only (`faults.contract/process_kill` is unsupported, proven by `test_oss_limits.py`) |
 | connectors/sinks/postgresql.md | Materialized mode keeps the table a snapshot of the view | `pg.mirrors_view` |
 | sql/system.md | `ERROR_VIEW` holds late records | not tested in this pass |

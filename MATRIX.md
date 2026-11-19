@@ -11,7 +11,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 | covered | exempt | failing | missing | unenforced |
 | ---: | ---: | ---: | ---: | ---: |
-| 151 | 1 | 3 | 0 | 0 |
+| 172 | 3 | 5 | 0 | 0 |
 
 ## Features
 
@@ -37,6 +37,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 | `sql.types` | Every SQL column type, encoded as JSON on HTTP and Kafka (SQL types, JSON format). | ✅ |
 | `input.errors` | Rejection of malformed records on ingress (JSON format). | ✅ |
 | `connector.postgres` | The PostgreSQL output connector in materialized mode (PostgreSQL output connector, experimental). | ✅ |
+| `runtime.workers` | The workers setting runs a pipeline on that many threads. It can change only while storage is cleared (Pipeline configuration). | ✅ |
 
 ## Invariants
 
@@ -114,7 +115,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 | Invariant | Subject | oss |
 | --- | --- | --- |
-| `delivery.no_duplicates` | `path.kafka_kafka` | ✅ |
+| `delivery.no_duplicates` | `path.kafka_kafka` | ☑️ |
 | `delivery.no_loss` | `path.kafka_kafka` | ✅ |
 | `delivery.recovers` | `path.kafka_kafka` | ✅ |
 | `pg.mirrors_view` | `sink.postgres` | ✅ |
@@ -181,7 +182,7 @@ Faults a running pipeline meets in production, from the Jepsen Kafka analyses (R
 | `long_broker_pause` | ✅ |
 | `long_network_cut` | ✅ |
 | `process_kill` | ☑️ |
-| `stop_and_resume` | ✅ |
+| `stop_and_resume` | ☑️ |
 
 ### `nulls.contract`
 
@@ -230,3 +231,12 @@ Every Feldera SQL column type (SQL types), adapted from sql-flow's sink.types la
 | `row` | ✅ | ✅ |
 | `arr_row` | ✅ | ✅ |
 | `map` | ✅ | ✅ |
+
+### `workers.contract`
+
+Worker counts a pipeline runs with. `workers` is a runtime setting (Pipeline configuration), and the promise that a view equals the batch query names no exception for it. The default runs use 4 workers. A supported answer means the view still equals the batch query, by both reads, at that count.
+
+| Member | `view.aggregate` | `view.asof` | `view.grouping` | `view.hop` | `view.join_full` | `view.join_inner` | `view.join_left` | `view.recursive` | `view.setop` | `view.subquery` | `view.tumble` | `view.window` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `w1` | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `w8` | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |

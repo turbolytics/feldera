@@ -1,6 +1,13 @@
 id: path.kafka_kafka
 kind: path
 feature: connector.kafka
+exempt:
+  - invariant: delivery.no_duplicates
+    reason: >
+      The docs promise no duplicates only across a graceful stop, which
+      checkpoints. The community edition refuses a graceful stop
+      (501 EnterpriseFeature), so the promise has nothing to apply to.
+    proven_by: testing/temper/test_oss_limits.py::test_graceful_stop_is_enterprise_only
 answers:
   faults.contract:
     pause_api: supported
@@ -16,4 +23,10 @@ answers:
         Feldera Enterprise Edition" (Checkpoints & Fault Tolerance). The
         open-source pipeline restarts empty.
       proven_by: testing/temper/test_oss_limits.py::test_kill_restarts_empty
-    stop_and_resume: supported
+    stop_and_resume:
+      unsupported: true
+      reason: >
+        A graceful stop (stop?force=false) "checkpoint[s] before compute is
+        deprovisioned" (Pipeline lifecycle), but the community edition refuses
+        it with 501 EnterpriseFeature and keeps running.
+      proven_by: testing/temper/test_oss_limits.py::test_graceful_stop_is_enterprise_only

@@ -20,5 +20,5 @@ members:
   - key: long_network_cut
   # kill -9 of the pipeline process; recovery needs fault tolerance
   - key: process_kill
-  # graceful stop, which writes a checkpoint, then start (it resumes in OSS too)
+  # graceful stop, which writes a checkpoint, then start (Enterprise-only: the community edition returns 501)
   - key: stop_and_resume

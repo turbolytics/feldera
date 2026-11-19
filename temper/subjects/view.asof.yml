@@ -1,3 +1,7 @@
 id: view.asof
 kind: view
 feature: sql.asof
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

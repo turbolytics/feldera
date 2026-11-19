@@ -1,0 +1,13 @@
+id: workers.contract
+description: >
+  Worker counts a pipeline runs with. `workers` is a runtime setting
+  (Pipeline configuration), and the promise that a view equals the batch query
+  names no exception for it. The default runs use 4 workers. A supported answer
+  means the view still equals the batch query, by both reads, at that count.
+applies_to: view
+requires: [oss]
+members:
+  # one worker thread: no exchange between workers
+  - key: w1
+  # eight worker threads, more than the container's CPUs at the time of the default runs
+  - key: w8

@@ -1,3 +1,7 @@
 id: view.hop
 kind: view
 feature: sql.hop
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

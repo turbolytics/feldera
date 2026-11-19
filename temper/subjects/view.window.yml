@@ -1,3 +1,7 @@
 id: view.window
 kind: view
 feature: sql.window
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

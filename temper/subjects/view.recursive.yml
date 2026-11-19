@@ -1,3 +1,7 @@
 id: view.recursive
 kind: view
 feature: sql.recursion
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported

@@ -2,3 +2,5 @@
 # One line per invariant or lattice member that applies to view.grouping, sorted by id: the status at each level.
 view.changes_add_up: {oss: failing}
 view.matches_batch: {oss: failing}
+workers.contract/w1: {oss: failing}
+workers.contract/w8: {oss: failing}

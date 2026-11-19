@@ -1,3 +1,7 @@
 id: view.subquery
 kind: view
 feature: sql.subquery
+answers:
+  workers.contract:
+    w1: supported
+    w8: supported
