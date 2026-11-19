@@ -1,0 +1,3 @@
+id: view.subquery
+kind: view
+feature: sql.subquery

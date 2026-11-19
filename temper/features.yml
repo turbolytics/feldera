@@ -1,0 +1,29 @@
+# What Feldera does, from its public docs (docs.feldera.com, v0.383.0 sources).
+features:
+  - id: sql.join
+    description: Inner, left, full outer and self joins, maintained incrementally.
+    requires: [oss]
+  - id: sql.aggregate
+    description: GROUP BY aggregates, HAVING, global aggregates and views over views.
+    requires: [oss]
+  - id: sql.window
+    description: Window functions (RANK and DENSE_RANK top-k, LAG, running SUM over a RANGE frame).
+    requires: [oss]
+  - id: sql.tumble
+    description: The TUMBLE table function for fixed event-time windows.
+    requires: [oss]
+  - id: sql.hop
+    description: The HOP table function for sliding event-time windows.
+    requires: [oss]
+  - id: sql.subquery
+    description: EXISTS, NOT EXISTS, IN, NOT IN and correlated scalar subqueries.
+    requires: [oss]
+  - id: sql.setop
+    description: UNION, UNION ALL, EXCEPT, INTERSECT and DISTINCT.
+    requires: [oss]
+  - id: connector.http
+    description: HTTP ingress with completion tokens, and HTTP egress change streams with an optional snapshot.
+    requires: [oss]
+  - id: connector.kafka
+    description: Kafka input and output. Without fault tolerance, the output retries broker failures with no delivery deadline.
+    requires: [oss]

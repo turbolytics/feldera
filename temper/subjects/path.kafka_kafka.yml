@@ -1,0 +1,22 @@
+id: path.kafka_kafka
+kind: path
+feature: connector.kafka
+answers:
+  faults.contract:
+    pause_api: supported
+    process_pause: supported
+    broker_pause: supported
+    network_cut: supported
+    process_kill:
+      unsupported: true
+      reason: >
+        Recovery from a crash needs fault tolerance, which "is only available in
+        Feldera Enterprise Edition" (Checkpoints & Fault Tolerance). The
+        open-source pipeline restarts empty.
+      tracked_by: docs/pipelines/fault-tolerance.md
+    stop_and_resume:
+      unsupported: true
+      reason: >
+        Checkpoint and resume is an Enterprise feature, so a stopped open-source
+        pipeline does not resume where it left off.
+      tracked_by: docs/pipelines/fault-tolerance.md

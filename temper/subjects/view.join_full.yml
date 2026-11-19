@@ -1,0 +1,3 @@
+id: view.join_full
+kind: view
+feature: sql.join

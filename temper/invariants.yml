@@ -1,0 +1,40 @@
+# Each claim quotes or restates Feldera's docs. The expected output is always
+# computed by DuckDB from the input the test generated, never from Feldera.
+invariants:
+  - id: view.matches_batch
+    claim: >
+      After an input is fully processed, a materialized view holds exactly what
+      the same query returns when run from scratch over the current tables.
+      ("the state of the views always corresponds to what you'd get if you ran
+      the queries in a batch system for the same input", What is Feldera.)
+    applies_to: view
+    class: safety
+    family: consistency
+    requires: [oss]
+  - id: view.changes_add_up
+    claim: >
+      The inserts and deletes a view streams to an output, starting from its
+      snapshot, add up to the batch query's result once a completion token
+      reports the input processed. ("the resulting outputs have been written to
+      all data sinks", Completion tokens.)
+    applies_to: view
+    class: safety
+    family: consistency
+    requires: [oss]
+  - id: delivery.no_loss
+    claim: >
+      Every record read from the input topic reaches the output topic while the
+      pipeline keeps running. ("temporary broker failures are retried without a
+      delivery deadline", Kafka output connector.)
+    applies_to: path
+    class: safety
+    family: delivery
+    requires: [oss]
+  - id: delivery.recovers
+    claim: >
+      After the last fault ends, the output catches up with the input within
+      two minutes, and the pipeline stays Running.
+    applies_to: path
+    class: liveness
+    family: delivery
+    requires: [oss]

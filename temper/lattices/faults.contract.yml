@@ -1,0 +1,20 @@
+id: faults.contract
+description: >
+  Faults a running pipeline meets in production, from the Jepsen Kafka analyses
+  (Redpanda 21.10.1, Bufstream 0.1.0) and Feldera's fault tolerance docs. A
+  supported answer means every delivery invariant holds under that fault.
+applies_to: path
+requires: [oss]
+members:
+  # the pause and resume API, which "every Feldera pipeline supports"
+  - key: pause_api
+  # SIGSTOP of the pipeline process, then SIGCONT, as a long GC or VM stall does
+  - key: process_pause
+  # the Kafka broker pauses (docker pause), then resumes
+  - key: broker_pause
+  # the network between the pipeline and Kafka is cut, then restored
+  - key: network_cut
+  # kill -9 of the pipeline process; recovery needs fault tolerance
+  - key: process_kill
+  # forced stop, then start; resuming needs checkpoints
+  - key: stop_and_resume

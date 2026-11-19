@@ -1,0 +1,6 @@
+temper: "0.1"
+project: feldera
+
+levels:
+  - name: oss
+    description: Feldera 0.383.0 open-source edition, one pipeline-manager container in Docker

@@ -1,0 +1,3 @@
+id: view.aggregate
+kind: view
+feature: sql.aggregate
