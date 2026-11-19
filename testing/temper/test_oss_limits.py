@@ -11,7 +11,7 @@ import time
 import pytest
 
 import harness
-from test_kafka import pipeline_pids
+import lanes
 
 PIPELINE = "temper_views"
 ROW = {"id": 1, "cust": 2, "amount": 5, "status": "paid", "ts": "2026-01-01 00:00:00"}
@@ -19,6 +19,7 @@ ROW = {"id": 1, "cust": 2, "amount": 5, "status": "paid", "ts": "2026-01-01 00:0
 
 def loaded():
     import views
+    lanes.wait("views")  # the views lane uses this pipeline first
     harness.create(PIPELINE, views.program())
     harness.reset(PIPELINE)
     harness.start(PIPELINE)
@@ -29,7 +30,7 @@ def loaded():
 @pytest.mark.exempts("faults.contract/process_kill", subject="path.kafka_kafka")
 def test_kill_restarts_empty():
     loaded()
-    pids = pipeline_pids()
+    pids = harness.pids_for(PIPELINE)
     assert pids, "no pipeline process"
     harness.sh("docker", "exec", harness.CONTAINER, "sh", "-c", f"kill -9 {' '.join(pids)}")
     assert harness.wait_for(lambda: (harness.pipeline(PIPELINE) or {}).get("deployment_status") != "Running", 60)

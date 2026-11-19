@@ -1,0 +1,3 @@
+id: input.http_json
+kind: input
+feature: input.errors

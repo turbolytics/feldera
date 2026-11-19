@@ -1,0 +1,3 @@
+id: adhoc.datafusion
+kind: adhoc
+feature: sql.adhoc

@@ -39,3 +39,24 @@ features:
   - id: transactions
     description: start_transaction and commit_transaction group inputs so views update once, on commit.
     requires: [oss]
+  - id: sql.primary_key
+    description: PRIMARY KEY tables, where inserts overwrite and updates change named columns (Uniqueness Constraints).
+    requires: [oss]
+  - id: sql.recursion
+    description: Mutually recursive views with least-fixed-point semantics (Mutually-Recursive Queries).
+    requires: [oss]
+  - id: sql.now
+    description: NOW() and temporal filters, re-evaluated on a step every clock_resolution (Date/time functions).
+    requires: [oss]
+  - id: sql.adhoc
+    description: Ad-hoc SELECT queries on materialized tables and views, answered by DataFusion (Ad-hoc SQL Queries).
+    requires: [oss]
+  - id: sql.types
+    description: Every SQL column type, encoded as JSON on HTTP and Kafka (SQL types, JSON format).
+    requires: [oss]
+  - id: input.errors
+    description: Rejection of malformed records on ingress (JSON format).
+    requires: [oss]
+  - id: connector.postgres
+    description: The PostgreSQL output connector in materialized mode (PostgreSQL output connector, experimental).
+    requires: [oss]

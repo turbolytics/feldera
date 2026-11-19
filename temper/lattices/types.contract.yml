@@ -1,0 +1,39 @@
+id: types.contract
+description: >
+  Every Feldera SQL column type (SQL types), adapted from sql-flow's sink.types
+  lattice. A supported answer means a value sent in comes back equal: through an
+  ad-hoc query and HTTP egress for the HTTP transport, and through Kafka JSON for
+  the Kafka transport. Values are edge cases: type minimums and maximums, a
+  38-digit decimal, unicode and escapes, sub-second times, a zoned timestamp.
+applies_to: transport
+requires: [oss]
+members:
+  - key: bool  # BOOLEAN
+  - key: i8  # TINYINT
+  - key: i16  # SMALLINT
+  - key: i32  # INT
+  - key: i64  # BIGINT
+  - key: u8  # TINYINT UNSIGNED
+  - key: u16  # SMALLINT UNSIGNED
+  - key: u32  # INT UNSIGNED
+  - key: u64  # BIGINT UNSIGNED
+  - key: real  # REAL
+  - key: double  # DOUBLE
+  - key: dec  # DECIMAL(38, 10)
+  - key: varchar  # VARCHAR
+  - key: char  # CHAR(4)
+  - key: binary  # BINARY(4)
+  - key: varbinary  # VARBINARY
+  - key: date  # DATE
+  - key: time  # TIME
+  - key: ts  # TIMESTAMP
+  - key: tstz  # TIMESTAMP WITH TIME ZONE
+  - key: uuid  # UUID
+  - key: variant  # VARIANT
+  - key: arr_int  # INT ARRAY
+  - key: arr_str  # VARCHAR ARRAY
+  - key: arr_ts  # TIMESTAMP ARRAY
+  - key: arr_arr  # BIGINT ARRAY ARRAY
+  - key: row  # ROW(a INT NULL, b VARCHAR NULL)
+  - key: arr_row  # ROW(a INT NULL) ARRAY
+  - key: map  # MAP<VARCHAR, INT>

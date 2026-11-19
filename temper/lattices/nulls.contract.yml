@@ -1,0 +1,12 @@
+id: nulls.contract
+description: >
+  Every place a NULL can appear in a row, adapted from sql-flow's sink.nulls
+  lattice. A supported answer means the NULL comes back as NULL.
+applies_to: transport
+requires: [oss]
+members:
+  - key: column
+  - key: array_element
+  - key: map_value
+  - key: row_field
+  - key: array_of_rows_field

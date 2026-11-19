@@ -153,11 +153,13 @@ def run_program(pipeline, module, model_cls, seeds, steps):
 _results = None
 
 
+def compute():
+    return run_program(PIPELINE, views, Model, SEEDS, STEPS)
+
+
 def results():
-    global _results
-    if _results is None:
-        _results = run_program(PIPELINE, views, Model, SEEDS, STEPS)
-    return _results
+    import lanes
+    return lanes.part("views", "incremental")
 
 
 def params(invariant):

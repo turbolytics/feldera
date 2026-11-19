@@ -2,14 +2,21 @@
 # One line per feature, sorted by id: the status at each level.
 connector.http: {oss: covered}
 connector.kafka: {oss: covered}
+connector.postgres: {oss: covered}
+input.errors: {oss: covered}
+sql.adhoc: {oss: covered}
 sql.aggregate: {oss: covered}
 sql.asof: {oss: covered}
 sql.grouping: {oss: failing}
 sql.hop: {oss: covered}
 sql.join: {oss: covered}
 sql.lateness: {oss: covered}
+sql.now: {oss: covered}
+sql.primary_key: {oss: covered}
+sql.recursion: {oss: covered}
 sql.setop: {oss: covered}
 sql.subquery: {oss: covered}
 sql.tumble: {oss: covered}
+sql.types: {oss: covered}
 sql.window: {oss: covered}
 transactions: {oss: covered}

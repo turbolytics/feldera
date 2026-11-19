@@ -13,6 +13,8 @@ import random
 
 import pytest
 
+import harness
+
 import views_late
 from test_incremental import run_program
 
@@ -90,11 +92,12 @@ def crow(row):
 _results = None
 
 
+def compute():
+    return run_program(PIPELINE, views_late, LateModel, SEEDS, STEPS)
+
+
 def results():
-    global _results
-    if _results is None:
-        _results = run_program(PIPELINE, views_late, LateModel, SEEDS, STEPS)
-    return _results
+    return harness.get("late", compute)
 
 
 def params(invariant):

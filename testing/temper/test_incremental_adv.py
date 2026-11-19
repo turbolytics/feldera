@@ -8,6 +8,8 @@ import datetime as dt
 
 import pytest
 
+import harness
+
 import views_adv
 from features import FEATURES
 from test_incremental import BASE, Model, run_program
@@ -53,11 +55,12 @@ def rrow(key, rate):
 _results = None
 
 
+def compute():
+    return run_program(PIPELINE, views_adv, AdvModel, SEEDS, STEPS)
+
+
 def results():
-    global _results
-    if _results is None:
-        _results = run_program(PIPELINE, views_adv, AdvModel, SEEDS, STEPS)
-    return _results
+    return harness.get("adv", compute)
 
 
 def params(invariant):

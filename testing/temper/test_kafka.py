@@ -5,7 +5,12 @@ a pipeline copies them to another topic. The fault fires three times. A
 read_committed consumer then reads the output topic.
 
 The open-source edition has no fault tolerance, so only faults the pipeline
-lives through are asked of it. The docs promise that the non-fault-tolerant
+lives through are asked of it.
+
+Time is scaled: the connectors' librdkafka socket and request timeouts drop
+from 60 s to 10 s, and the "long" faults from 90 s to 15 s, so they still
+outlast the timeouts. Short faults drop from 20 s to 6 s. Each fault fires
+once. The docs promise that the non-fault-tolerant
 Kafka output retries "temporary broker failures ... without a delivery
 deadline". Duplicates are not promised away, so they are reported, not failed.
 
@@ -30,7 +35,10 @@ KAFKA = "localhost:26092"
 KAFKA_INSIDE = "kafka:9092"
 BROKER = "temper-feldera-kafka"
 SRC, DST = "fk-in", "fk-out"
-N, RATE, RECOVERY = 30000, 1000, 120
+N, RATE, RECOVERY = 10000, 2000, 60
+TIMEOUT_MS = "10000"  # librdkafka default 60000
+SECONDS = {"pause_api": 4, "process_pause": 6, "broker_pause": 6, "network_cut": 6,
+           "long_broker_pause": 15, "long_network_cut": 15}
 FAULTS = ["pause_api", "process_pause", "broker_pause", "network_cut", "long_broker_pause", "long_network_cut", "stop_and_resume"]
 
 
@@ -39,8 +47,9 @@ def program():
         return json.dumps([{"transport": {"name": name, "config": {
             "bootstrap.servers": KAFKA_INSIDE, "topic": topic, **extra}},
             "format": {"name": "json", "config": {"update_format": fmt, "array": False}}}])
-    src = conn("kafka_input", SRC, {"start_from": "earliest"}, "raw")
-    dst = conn("kafka_output", DST, {}, "insert_delete")
+    scaled = {"socket.timeout.ms": TIMEOUT_MS}
+    src = conn("kafka_input", SRC, {"start_from": "earliest", **scaled}, "raw")
+    dst = conn("kafka_output", DST, {**scaled, "request.timeout.ms": TIMEOUT_MS}, "insert_delete")
     return f"""
 CREATE TABLE src (seq BIGINT NOT NULL) WITH ('connectors' = '{src}');
 CREATE VIEW dst WITH ('connectors' = '{dst}') AS SELECT seq FROM src;
@@ -115,26 +124,26 @@ def inject(fault, rng):
     if fault == "pause_api":
         r = harness.requests.post(f"{harness.API}/pipelines/{PIPELINE}/pause", timeout=30)
         r.raise_for_status()
-        time.sleep(10)
+        time.sleep(SECONDS[fault])
         harness.requests.post(f"{harness.API}/pipelines/{PIPELINE}/resume", timeout=30).raise_for_status()
         return "paused and resumed via the API"
     if fault == "process_pause":
-        pids = pipeline_pids()
+        pids = harness.pids_for(PIPELINE)  # only this pipeline; others run at the same time
         if not pids:
             raise RuntimeError("no pipeline process to pause")
         harness.sh("docker", "exec", harness.CONTAINER, "sh", "-c", f"kill -STOP {' '.join(pids)}")
-        time.sleep(20)
+        time.sleep(SECONDS[fault])
         harness.sh("docker", "exec", harness.CONTAINER, "sh", "-c", f"kill -CONT {' '.join(pids)}")
-        return f"SIGSTOP {pids} for 20s"
+        return f"SIGSTOP {pids} for {SECONDS[fault]}s"
     if fault in ("broker_pause", "long_broker_pause"):
-        secs = 90 if fault.startswith("long") else 20
+        secs = SECONDS[fault]
         harness.sh("docker", "pause", BROKER)
         time.sleep(secs)
         harness.sh("docker", "unpause", BROKER)
         return f"paused the broker {secs}s"
     if fault in ("network_cut", "long_network_cut"):
-        # Longer than librdkafka's 60 s socket and request timeouts.
-        secs = 90 if fault.startswith("long") else 20
+        # The long cut outlasts the connectors' (scaled) socket and request timeouts.
+        secs = SECONDS[fault]
         harness.sh("docker", "network", "disconnect", harness.NETWORK, BROKER)
         time.sleep(secs)
         harness.sh("docker", "network", "connect", "--alias", "kafka", harness.NETWORK, BROKER)
@@ -146,39 +155,46 @@ def inject(fault, rng):
     raise ValueError(fault)
 
 
-_cache = {}
-_runs = [0]
+def compute_all():
+    """Every fault, one after another (they share the broker and the pipeline)."""
+    out = {}
+    for fault in FAULTS:
+        try:
+            out[fault] = run_fault(fault)
+        except Exception as e:
+            out[fault] = e
+    return out
 
 
 def result(fault):
-    if fault in _cache:
-        return _cache[fault]
+    import lanes
+    return lanes.part("kafka", fault)
+
+
+def run_fault(fault):
     harness.create(PIPELINE, program())
     create_topics()
     harness.reset(PIPELINE)
     harness.start(PIPELINE)
-    _runs[0] += 1
     base = int(time.time()) * 100000
     guard = harness.SleepGuard()
     rng = random.Random(fault)
     producer = SeqProducer(base, N, RATE)
     producer.start()
     log = []
-    for _ in range(3):
-        time.sleep(rng.uniform(4, 7))
-        log.append(inject(fault, rng))
+    time.sleep(rng.uniform(2, 4))
+    log.append(inject(fault, rng))
     producer.join()
     counts, reached = read_range(base, N, RECOVERY)
     state = (harness.pipeline(PIPELINE) or {}).get("deployment_status")
     harness.stop(PIPELINE, force=True)
     if guard.slept():
-        pytest.exit("run void: the host slept", returncode=3)
+        raise RuntimeError("run void: the host slept")
     missing = sorted(set(range(base, base + N)) - set(counts))
     dupes = sorted(k for k, v in counts.items() if v > 1)
     r = {"log": log, "state": state, "reached": reached, "missing": [m - base for m in missing],
          "dupes": len(dupes)}
     print(f"\n[{fault}] {log} state={state} missing={len(missing)} dupes={len(dupes)} reached={reached}")
-    _cache[fault] = r
     return r
 
 
@@ -208,3 +224,12 @@ def test_recovers(fault):
     r = result(fault)
     assert r["reached"] and r["state"] == "Running", \
         f"output did not catch up within {RECOVERY}s; state {r['state']}; {r['log']}"
+
+
+@pytest.mark.covers("delivery.no_duplicates", subject="path.kafka_kafka")
+def test_graceful_stop_duplicates_nothing():
+    """A graceful stop checkpoints before it deprovisions (pipelines/lifecycle.md),
+    and the start resumes from it. The docs promise no duplicates only there; for
+    the other faults the pipeline never restarts, and duplicates are reported."""
+    r = result("stop_and_resume")
+    assert not r["dupes"], f"{r['dupes']} records duplicated across a graceful stop; {r['log']}"

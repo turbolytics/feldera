@@ -30,6 +30,10 @@ def start_feldera():
             return
     except requests.RequestException:
         pass
+    # A stopped container keeps its compiled programs (compiling takes minutes).
+    if sh("docker", "start", CONTAINER).returncode == 0:
+        wait_api()
+        return
     sh("docker", "rm", "-f", CONTAINER)
     sh("docker", "network", "create", NETWORK)
     sh("docker", "run", "-d", "--name", CONTAINER, "--network", NETWORK, "--memory", "3g", "--cpus", "4",
@@ -252,3 +256,39 @@ class SleepGuard:
 
     def slept(self, slack=5.0):
         return (time.time() - self.wall) - (time.monotonic() - self.mono) > slack
+
+
+# --- concurrency ----------------------------------------------------------------
+#
+# Scenarios on different pipelines run at the same time. conftest submits
+# every lane at session start; each test then waits for its lane's result. A
+# lane that raises stores the exception, so a broken lane runs once and every
+# test that reads it reports the same error.
+
+from concurrent.futures import ThreadPoolExecutor
+
+_pool = ThreadPoolExecutor(max_workers=10)
+_futures = {}
+_futures_lock = threading.Lock()
+
+
+def submit(key, fn):
+    with _futures_lock:
+        if key not in _futures:
+            _futures[key] = _pool.submit(fn)
+        return _futures[key]
+
+
+def get(key, fn):
+    return submit(key, fn).result()
+
+
+def pids_for(name):
+    """The process of one pipeline. The manager names it program_<pipeline id>,
+    which the kernel truncates to 15 characters."""
+    pid = (pipeline(name) or {}).get("id", "")
+    want = ("program_" + pid)[:15]
+    out = sh("docker", "exec", CONTAINER, "sh", "-c",
+             'for p in /proc/[0-9]*; do [ "$(cat $p/comm 2>/dev/null)" = "' + want + '" ] && '
+             '! grep -q "^State:.*Z" $p/status && echo ${p#/proc/}; done').stdout
+    return out.split()

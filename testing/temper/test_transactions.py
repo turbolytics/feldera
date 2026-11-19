@@ -35,6 +35,11 @@ _results = None
 
 
 def results():
+    import lanes
+    return lanes.part("views", "transactions")
+
+
+def compute():
     global _results
     if _results is not None:
         return _results

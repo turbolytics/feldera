@@ -82,3 +82,115 @@ invariants:
     class: liveness
     family: delivery
     requires: [oss]
+  - id: delivery.no_duplicates
+    claim: >
+      A graceful stop and start neither drops nor repeats a record. A graceful stop "shut[s] down the circuit and checkpoint[s] before compute is deprovisioned" (Pipeline lifecycle), and the start resumes from it. The docs promise nothing about duplicates under faults the pipeline lives through, and none about output order without fault tolerance, so neither is declared.
+    applies_to: path
+    class: safety
+    family: delivery
+    requires: [oss]
+  - id: adhoc.consistent_snapshot
+    claim: >
+      Ad-hoc queries are evaluated "against a consistent snapshot of the pipeline's tables and views" (Ad-hoc SQL Queries). A table and two views over it agree within one query, while inputs stream in and while the pipeline is paused.
+    applies_to: adhoc
+    class: safety
+    family: consistency
+    requires: [oss]
+  - id: adhoc.only_materialized
+    claim: >
+      "Tables and views are only accessible to SELECT ad-hoc queries if they are declared as materialized" (Ad-hoc SQL Queries).
+    applies_to: adhoc
+    class: safety
+    family: api
+    requires: [oss]
+  - id: pk.insert_overwrites
+    claim: >
+      "On insert events, Feldera atomically overwrites any existing record with the same primary key" (Uniqueness Constraints).
+    applies_to: pk
+    class: safety
+    family: upsert
+    requires: [oss]
+  - id: pk.delete_missing_ignored
+    claim: >
+      "On delete events, Feldera verifies that the specified key exists before applying the deletion. If no matching record is found, the delete is ignored."
+    applies_to: pk
+    class: safety
+    family: upsert
+    requires: [oss]
+  - id: pk.delete_by_key
+    claim: >
+      A delete event removes the record with its key, whatever its other columns hold ("Feldera verifies that the specified key exists before applying the deletion").
+    applies_to: pk
+    class: safety
+    family: upsert
+    requires: [oss]
+  - id: pk.update_changes_columns
+    claim: >
+      "On update events, which change some columns of a record, Feldera changes the record with the specified key." Columns the update does not name keep their values (JSON format).
+    applies_to: pk
+    class: safety
+    family: upsert
+    requires: [oss]
+  - id: pk.update_missing_ignored
+    claim: >
+      "If no matching record is found, the update is ignored" (Uniqueness Constraints).
+    applies_to: pk
+    class: safety
+    family: upsert
+    requires: [oss]
+  - id: now.increasing_utc
+    claim: >
+      NOW() "returns the date and time when the current step of the pipeline was triggered", in UTC, and "is guaranteed to always be increasing". Without new inputs "a step is triggered every second" (Date/time functions).
+    applies_to: clock
+    class: safety
+    family: time
+    requires: [oss]
+  - id: now.temporal_filter_advances
+    claim: >
+      "Views that depend on the value of NOW() are updated using the new current time" (Date/time functions). A row leaves a five-second temporal filter about five seconds after its timestamp, with no new input.
+    applies_to: clock
+    class: liveness
+    family: time
+    requires: [oss]
+  - id: input.rejects_out_of_range
+    claim: >
+      Integers "must be a valid integer and fit the range of the type, otherwise an error is returned on ingress" (JSON format).
+    applies_to: input
+    class: safety
+    family: input
+    requires: [oss]
+  - id: input.rejects_invalid_date
+    claim: >
+      "Invalid dates (e.g., 1997-02-29) are rejected with an error during ingress" (JSON format).
+    applies_to: input
+    class: safety
+    family: input
+    requires: [oss]
+  - id: input.keeps_long_strings
+    claim: >
+      "Strings that exceed the length specified in the SQL table declaration are ingested without truncation" (JSON format).
+    applies_to: input
+    class: safety
+    family: input
+    requires: [oss]
+  - id: input.rejects_nan
+    claim: >
+      "NaN, Inf, and -Inf floating point values are currently not supported by the JSON parser" (JSON format). A record holding NaN is not ingested.
+    applies_to: input
+    class: safety
+    family: input
+    requires: [oss]
+  - id: input.rejects_broken_json
+    claim: >
+      A request whose body is not valid JSON is rejected, and nothing from it is ingested.
+    applies_to: input
+    class: safety
+    family: input
+    requires: [oss]
+  - id: pg.mirrors_view
+    claim: >
+      In materialized mode the connector "maintains the target table as a materialized snapshot of the view", updating records in place and removing deleted ones (PostgreSQL output connector). A completion token reports outputs "written to all data sinks", so after each token the table equals the view, including after PostgreSQL pauses for 6 s.
+    applies_to: sink
+    class: safety
+    family: delivery
+    requires: [oss]

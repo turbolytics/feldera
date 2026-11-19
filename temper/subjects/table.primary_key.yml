@@ -1,0 +1,3 @@
+id: table.primary_key
+kind: pk
+feature: sql.primary_key

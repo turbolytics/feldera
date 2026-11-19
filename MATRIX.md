@@ -11,7 +11,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 | covered | exempt | failing | missing | unenforced |
 | ---: | ---: | ---: | ---: | ---: |
-| 58 | 1 | 3 | 0 | 0 |
+| 151 | 1 | 3 | 0 | 0 |
 
 ## Features
 
@@ -30,8 +30,23 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 | `sql.asof` | LEFT ASOF JOIN with a MATCH_CONDITION on timestamps. | ✅ |
 | `sql.lateness` | LATENESS on timestamp columns, which lets Feldera discard state it no longer needs. | ✅ |
 | `transactions` | start_transaction and commit_transaction group inputs so views update once, on commit. | ✅ |
+| `sql.primary_key` | PRIMARY KEY tables, where inserts overwrite and updates change named columns (Uniqueness Constraints). | ✅ |
+| `sql.recursion` | Mutually recursive views with least-fixed-point semantics (Mutually-Recursive Queries). | ✅ |
+| `sql.now` | NOW() and temporal filters, re-evaluated on a step every clock_resolution (Date/time functions). | ✅ |
+| `sql.adhoc` | Ad-hoc SELECT queries on materialized tables and views, answered by DataFusion (Ad-hoc SQL Queries). | ✅ |
+| `sql.types` | Every SQL column type, encoded as JSON on HTTP and Kafka (SQL types, JSON format). | ✅ |
+| `input.errors` | Rejection of malformed records on ingress (JSON format). | ✅ |
+| `connector.postgres` | The PostgreSQL output connector in materialized mode (PostgreSQL output connector, experimental). | ✅ |
 
 ## Invariants
+
+### api
+
+| Invariant | Subject | oss |
+| --- | --- | --- |
+| `adhoc.only_materialized` | `adhoc.datafusion` | ✅ |
+
+- `adhoc.only_materialized` — "Tables and views are only accessible to SELECT ad-hoc queries if they are declared as materialized" (Ad-hoc SQL Queries).
 
 ### atomicity
 
@@ -49,6 +64,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 | Invariant | Subject | oss |
 | --- | --- | --- |
+| `adhoc.consistent_snapshot` | `adhoc.datafusion` | ✅ |
 | `late.changes_add_up` | `late.aggregate` | ✅ |
 | `late.changes_add_up` | `late.asof` | ✅ |
 | `late.changes_add_up` | `late.hop` | ✅ |
@@ -63,6 +79,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 | `view.changes_add_up` | `view.join_full` | ✅ |
 | `view.changes_add_up` | `view.join_inner` | ✅ |
 | `view.changes_add_up` | `view.join_left` | ✅ |
+| `view.changes_add_up` | `view.recursive` | ✅ |
 | `view.changes_add_up` | `view.setop` | ✅ |
 | `view.changes_add_up` | `view.subquery` | ✅ |
 | `view.changes_add_up` | `view.tumble` | ✅ |
@@ -81,11 +98,13 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 | `view.matches_batch` | `view.join_full` | ✅ |
 | `view.matches_batch` | `view.join_inner` | ✅ |
 | `view.matches_batch` | `view.join_left` | ✅ |
+| `view.matches_batch` | `view.recursive` | ✅ |
 | `view.matches_batch` | `view.setop` | ✅ |
 | `view.matches_batch` | `view.subquery` | ✅ |
 | `view.matches_batch` | `view.tumble` | ✅ |
 | `view.matches_batch` | `view.window` | ✅ |
 
+- `adhoc.consistent_snapshot` — Ad-hoc queries are evaluated "against a consistent snapshot of the pipeline's tables and views" (Ad-hoc SQL Queries). A table and two views over it agree within one query, while inputs stream in and while the pipeline is paused.
 - `late.changes_add_up` — For views over LATENESS tables too, the changes streamed to an output add up to the batch query's result once a completion token reports the input processed.
 - `view.changes_add_up` — The inserts and deletes a view streams to an output, starting from its snapshot, add up to the batch query's result once a completion token reports the input processed. ("the resulting outputs have been written to all data sinks", Completion tokens.)
 - `view.lateness_preserves_output` — When every input respects its LATENESS bound, views over those tables hold exactly what the batch query returns. ("the output of the program with lateness annotations is guaranteed to be identical to outputs of the same program without annotations", Time series guide.)
@@ -95,11 +114,57 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 | Invariant | Subject | oss |
 | --- | --- | --- |
+| `delivery.no_duplicates` | `path.kafka_kafka` | ✅ |
 | `delivery.no_loss` | `path.kafka_kafka` | ✅ |
 | `delivery.recovers` | `path.kafka_kafka` | ✅ |
+| `pg.mirrors_view` | `sink.postgres` | ✅ |
 
+- `delivery.no_duplicates` — A graceful stop and start neither drops nor repeats a record. A graceful stop "shut[s] down the circuit and checkpoint[s] before compute is deprovisioned" (Pipeline lifecycle), and the start resumes from it. The docs promise nothing about duplicates under faults the pipeline lives through, and none about output order without fault tolerance, so neither is declared.
 - `delivery.no_loss` — Every record read from the input topic reaches the output topic while the pipeline keeps running. ("temporary broker failures are retried without a delivery deadline", Kafka output connector.)
 - `delivery.recovers` — After the last fault ends, the output catches up with the input within two minutes, and the pipeline stays Running.
+- `pg.mirrors_view` — In materialized mode the connector "maintains the target table as a materialized snapshot of the view", updating records in place and removing deleted ones (PostgreSQL output connector). A completion token reports outputs "written to all data sinks", so after each token the table equals the view, including after PostgreSQL pauses for 6 s.
+
+### input
+
+| Invariant | Subject | oss |
+| --- | --- | --- |
+| `input.keeps_long_strings` | `input.http_json` | ✅ |
+| `input.rejects_broken_json` | `input.http_json` | ✅ |
+| `input.rejects_invalid_date` | `input.http_json` | ✅ |
+| `input.rejects_nan` | `input.http_json` | ✅ |
+| `input.rejects_out_of_range` | `input.http_json` | ✅ |
+
+- `input.keeps_long_strings` — "Strings that exceed the length specified in the SQL table declaration are ingested without truncation" (JSON format).
+- `input.rejects_broken_json` — A request whose body is not valid JSON is rejected, and nothing from it is ingested.
+- `input.rejects_invalid_date` — "Invalid dates (e.g., 1997-02-29) are rejected with an error during ingress" (JSON format).
+- `input.rejects_nan` — "NaN, Inf, and -Inf floating point values are currently not supported by the JSON parser" (JSON format). A record holding NaN is not ingested.
+- `input.rejects_out_of_range` — Integers "must be a valid integer and fit the range of the type, otherwise an error is returned on ingress" (JSON format).
+
+### time
+
+| Invariant | Subject | oss |
+| --- | --- | --- |
+| `now.increasing_utc` | `clock.now` | ✅ |
+| `now.temporal_filter_advances` | `clock.now` | ✅ |
+
+- `now.increasing_utc` — NOW() "returns the date and time when the current step of the pipeline was triggered", in UTC, and "is guaranteed to always be increasing". Without new inputs "a step is triggered every second" (Date/time functions).
+- `now.temporal_filter_advances` — "Views that depend on the value of NOW() are updated using the new current time" (Date/time functions). A row leaves a five-second temporal filter about five seconds after its timestamp, with no new input.
+
+### upsert
+
+| Invariant | Subject | oss |
+| --- | --- | --- |
+| `pk.delete_by_key` | `table.primary_key` | ✅ |
+| `pk.delete_missing_ignored` | `table.primary_key` | ✅ |
+| `pk.insert_overwrites` | `table.primary_key` | ✅ |
+| `pk.update_changes_columns` | `table.primary_key` | ✅ |
+| `pk.update_missing_ignored` | `table.primary_key` | ✅ |
+
+- `pk.delete_by_key` — A delete event removes the record with its key, whatever its other columns hold ("Feldera verifies that the specified key exists before applying the deletion").
+- `pk.delete_missing_ignored` — "On delete events, Feldera verifies that the specified key exists before applying the deletion. If no matching record is found, the delete is ignored."
+- `pk.insert_overwrites` — "On insert events, Feldera atomically overwrites any existing record with the same primary key" (Uniqueness Constraints).
+- `pk.update_changes_columns` — "On update events, which change some columns of a record, Feldera changes the record with the specified key." Columns the update does not name keep their values (JSON format).
+- `pk.update_missing_ignored` — "If no matching record is found, the update is ignored" (Uniqueness Constraints).
 
 ## Lattices
 
@@ -117,3 +182,51 @@ Faults a running pipeline meets in production, from the Jepsen Kafka analyses (R
 | `long_network_cut` | ✅ |
 | `process_kill` | ☑️ |
 | `stop_and_resume` | ✅ |
+
+### `nulls.contract`
+
+Every place a NULL can appear in a row, adapted from sql-flow's sink.nulls lattice. A supported answer means the NULL comes back as NULL.
+
+| Member | `transport.http` | `transport.kafka` |
+| --- | --- | --- |
+| `column` | ✅ | ✅ |
+| `array_element` | ✅ | ✅ |
+| `map_value` | ✅ | ✅ |
+| `row_field` | ✅ | ✅ |
+| `array_of_rows_field` | ✅ | ✅ |
+
+### `types.contract`
+
+Every Feldera SQL column type (SQL types), adapted from sql-flow's sink.types lattice. A supported answer means a value sent in comes back equal: through an ad-hoc query and HTTP egress for the HTTP transport, and through Kafka JSON for the Kafka transport. Values are edge cases: type minimums and maximums, a 38-digit decimal, unicode and escapes, sub-second times, a zoned timestamp.
+
+| Member | `transport.http` | `transport.kafka` |
+| --- | --- | --- |
+| `bool` | ✅ | ✅ |
+| `i8` | ✅ | ✅ |
+| `i16` | ✅ | ✅ |
+| `i32` | ✅ | ✅ |
+| `i64` | ✅ | ✅ |
+| `u8` | ✅ | ✅ |
+| `u16` | ✅ | ✅ |
+| `u32` | ✅ | ✅ |
+| `u64` | ✅ | ✅ |
+| `real` | ✅ | ✅ |
+| `double` | ✅ | ✅ |
+| `dec` | ✅ | ✅ |
+| `varchar` | ✅ | ✅ |
+| `char` | ✅ | ✅ |
+| `binary` | ✅ | ✅ |
+| `varbinary` | ✅ | ✅ |
+| `date` | ✅ | ✅ |
+| `time` | ✅ | ✅ |
+| `ts` | ✅ | ✅ |
+| `tstz` | ✅ | ✅ |
+| `uuid` | ✅ | ✅ |
+| `variant` | ✅ | ✅ |
+| `arr_int` | ✅ | ✅ |
+| `arr_str` | ✅ | ✅ |
+| `arr_ts` | ✅ | ✅ |
+| `arr_arr` | ✅ | ✅ |
+| `row` | ✅ | ✅ |
+| `arr_row` | ✅ | ✅ |
+| `map` | ✅ | ✅ |

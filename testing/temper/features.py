@@ -14,4 +14,5 @@ FEATURES = {
     'view.subquery': 'sql.subquery',
     'view.tumble': 'sql.tumble',
     'view.window': 'sql.window',
+    'view.recursive': 'sql.recursion',
 }
