@@ -21,6 +21,7 @@ import pytest
 
 import harness
 import views
+from features import FEATURES
 
 SEEDS = [11, 23, 37]
 STEPS = 40
@@ -160,7 +161,8 @@ def results():
 
 
 def params(invariant):
-    return [pytest.param(v, id=v, marks=[pytest.mark.covers(invariant, subject=subj)])
+    return [pytest.param(v, id=v, marks=[pytest.mark.covers(invariant, subject=subj), pytest.mark.covers(FEATURES[subj]),
+                                           pytest.mark.covers("connector.http")])
             for v, (subj, _, _) in views.VIEWS.items()]
 
 

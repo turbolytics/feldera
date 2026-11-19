@@ -31,17 +31,19 @@ KAFKA_INSIDE = "kafka:9092"
 BROKER = "temper-feldera-kafka"
 SRC, DST = "fk-in", "fk-out"
 N, RATE, RECOVERY = 30000, 1000, 120
-FAULTS = ["pause_api", "process_pause", "broker_pause", "network_cut"]
+FAULTS = ["pause_api", "process_pause", "broker_pause", "network_cut", "long_broker_pause", "long_network_cut", "stop_and_resume"]
 
 
 def program():
-    def conn(name, topic, extra):
+    def conn(name, topic, extra, fmt):
         return json.dumps([{"transport": {"name": name, "config": {
             "bootstrap.servers": KAFKA_INSIDE, "topic": topic, **extra}},
-            "format": {"name": "json", "config": {"update_format": "raw", "array": False}}}])
+            "format": {"name": "json", "config": {"update_format": fmt, "array": False}}}])
+    src = conn("kafka_input", SRC, {"start_from": "earliest"}, "raw")
+    dst = conn("kafka_output", DST, {}, "insert_delete")
     return f"""
-CREATE TABLE src (seq BIGINT NOT NULL) WITH ('connectors' = '{conn("kafka_input", SRC, {"start_from": "earliest"})}');
-CREATE VIEW dst WITH ('connectors' = '{conn("kafka_output", DST, {})}') AS SELECT seq FROM src;
+CREATE TABLE src (seq BIGINT NOT NULL) WITH ('connectors' = '{src}');
+CREATE VIEW dst WITH ('connectors' = '{dst}') AS SELECT seq FROM src;
 """
 
 
@@ -84,10 +86,14 @@ def read_range(base, n, timeout, quiet=10):
         while time.time() < deadline:
             msg = c.poll(0.5)
             if msg is not None and not msg.error():
-                v = json.loads(msg.value())
-                seq = (v.get("insert") or v).get("seq") if isinstance(v, dict) else None
-                if seq is not None and base <= seq < base + n:
-                    counts[seq] = counts.get(seq, 0) + 1
+                # A message carries one or more newline-separated records.
+                for line in msg.value().splitlines():
+                    if not line.strip():
+                        continue
+                    v = json.loads(line)
+                    seq = (v.get("insert") or {}).get("seq")
+                    if seq is not None and base <= seq < base + n:
+                        counts[seq] = counts.get(seq, 0) + 1
             if reached_at is None and len(counts) >= n:
                 reached_at = time.time()
             if reached_at is not None and time.time() - reached_at > quiet:
@@ -120,16 +126,23 @@ def inject(fault, rng):
         time.sleep(20)
         harness.sh("docker", "exec", harness.CONTAINER, "sh", "-c", f"kill -CONT {' '.join(pids)}")
         return f"SIGSTOP {pids} for 20s"
-    if fault == "broker_pause":
+    if fault in ("broker_pause", "long_broker_pause"):
+        secs = 90 if fault.startswith("long") else 20
         harness.sh("docker", "pause", BROKER)
-        time.sleep(20)
+        time.sleep(secs)
         harness.sh("docker", "unpause", BROKER)
-        return "paused the broker 20s"
-    if fault == "network_cut":
+        return f"paused the broker {secs}s"
+    if fault in ("network_cut", "long_network_cut"):
+        # Longer than librdkafka's 60 s socket and request timeouts.
+        secs = 90 if fault.startswith("long") else 20
         harness.sh("docker", "network", "disconnect", harness.NETWORK, BROKER)
-        time.sleep(20)
+        time.sleep(secs)
         harness.sh("docker", "network", "connect", "--alias", "kafka", harness.NETWORK, BROKER)
-        return "cut the pipeline from Kafka for 20s"
+        return f"cut the pipeline from Kafka for {secs}s"
+    if fault == "stop_and_resume":
+        harness.stop(PIPELINE, force=False)
+        harness.start(PIPELINE)
+        return "stopped gracefully, then started"
     raise ValueError(fault)
 
 
@@ -176,6 +189,10 @@ def test_fault_keeps_every_delivery_invariant(fault):
     r = result(fault)
     assert not r["missing"], f"{len(r['missing'])} of {N} missing, e.g. {r['missing'][:10]}; {r['log']}"
     assert r["reached"] and r["state"] == "Running", f"no recovery; state {r['state']}"
+    if fault == "stop_and_resume":
+        # "it uses the checkpoint to resume from the exact point where it left
+        # off, without dropping or duplicating input or output."
+        assert not r["dupes"], f"{r['dupes']} records duplicated across a graceful stop; {r['log']}"
 
 
 @pytest.mark.parametrize("fault", [pytest.param(f, marks=[

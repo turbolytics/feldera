@@ -9,6 +9,7 @@ import datetime as dt
 import pytest
 
 import views_adv
+from features import FEATURES
 from test_incremental import BASE, Model, run_program
 
 SEEDS = [101, 202, 303, 404]
@@ -60,7 +61,8 @@ def results():
 
 
 def params(invariant):
-    return [pytest.param(v, id=v, marks=[pytest.mark.covers(invariant, subject=subj)])
+    return [pytest.param(v, id=v, marks=[pytest.mark.covers(invariant, subject=subj), pytest.mark.covers(FEATURES[subj]),
+                                           pytest.mark.covers("connector.http")])
             for v, (subj, _, _) in views_adv.VIEWS.items()]
 
 

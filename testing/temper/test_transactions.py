@@ -92,16 +92,19 @@ def results():
 
 
 @pytest.mark.covers("txn.no_output_while_open", subject="txn.http")
+@pytest.mark.covers("transactions")
 def test_no_output_while_open():
     assert results()["leak"] is None, f"output escaped an open transaction: {results()['leak']}"
 
 
 @pytest.mark.covers("txn.commit_is_one_batch", subject="txn.http")
+@pytest.mark.covers("transactions")
 def test_commit_is_one_batch():
     assert results()["torn"] is None, f"a commit reached a view in pieces: {results()['torn']}"
 
 
 @pytest.mark.covers("txn.matches_batch_after_commit", subject="txn.http")
+@pytest.mark.covers("transactions")
 def test_matches_batch_after_commit():
     r = results()
     assert r["content"] is None and r["batch"] is None, f"view: {r['content']}; changes: {r['batch']}"

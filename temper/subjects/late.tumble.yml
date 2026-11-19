@@ -1,0 +1,3 @@
+id: late.tumble
+kind: late_view
+feature: sql.lateness

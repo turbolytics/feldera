@@ -27,7 +27,16 @@ invariants:
       exactly what the batch query returns. ("the output of the program with
       lateness annotations is guaranteed to be identical to outputs of the same
       program without annotations", Time series guide.)
-    applies_to: view
+    applies_to: late_view
+    class: safety
+    family: consistency
+    requires: [oss]
+  - id: late.changes_add_up
+    claim: >
+      For views over LATENESS tables too, the changes streamed to an output add
+      up to the batch query's result once a completion token reports the input
+      processed.
+    applies_to: late_view
     class: safety
     family: consistency
     requires: [oss]

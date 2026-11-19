@@ -98,7 +98,7 @@ def results():
 
 
 def params(invariant):
-    return [pytest.param(v, id=v, marks=[pytest.mark.covers(invariant, subject=subj)])
+    return [pytest.param(v, id=v, marks=[pytest.mark.covers(invariant, subject=subj), pytest.mark.covers("sql.lateness")])
             for v, (subj, _, _) in views_late.VIEWS.items()]
 
 
@@ -108,7 +108,7 @@ def test_view_matches_batch(view):
     assert bad is None, f"{view} differs from the batch query: {bad}"
 
 
-@pytest.mark.parametrize("view", params("view.changes_add_up"))
+@pytest.mark.parametrize("view", params("late.changes_add_up"))
 def test_changes_add_up_to_batch(view):
     bad = results()["changes"][view]
     assert bad is None, f"{view}'s change stream differs from the batch query: {bad}"

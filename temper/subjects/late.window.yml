@@ -1,0 +1,3 @@
+id: late.window
+kind: late_view
+feature: sql.lateness

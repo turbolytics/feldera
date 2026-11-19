@@ -1,0 +1,3 @@
+id: late.aggregate
+kind: late_view
+feature: sql.lateness

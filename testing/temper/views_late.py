@@ -22,42 +22,42 @@ CREATE TABLE clicks (id INT NOT NULL, k INT, ts TIMESTAMP NOT NULL);
 TB = "time_bucket(INTERVAL '10 minutes', ts)"
 
 VIEWS = {
-    "l_tumble": ("view.tumble",
+    "l_tumble": ("late.tumble",
                  "SELECT window_start, COUNT(*) AS n, SUM(v) AS s FROM TABLE(TUMBLE(TABLE events, DESCRIPTOR(ts), "
                  "INTERVAL '10' MINUTE)) GROUP BY window_start",
                  f"SELECT {TB} AS window_start, COUNT(*) AS n, SUM(v) AS s FROM events GROUP BY 1"),
-    "l_tumble_k": ("view.tumble",
+    "l_tumble_k": ("late.tumble",
                    "SELECT window_start, k, MAX(v) AS hi, COUNT(DISTINCT v) AS dv FROM TABLE(TUMBLE(TABLE events, "
                    "DESCRIPTOR(ts), INTERVAL '10' MINUTE)) GROUP BY window_start, k",
                    f"SELECT {TB} AS window_start, k, MAX(v) AS hi, COUNT(DISTINCT v) AS dv FROM events GROUP BY 1, 2"),
-    "l_hop": ("view.hop",
+    "l_hop": ("late.hop",
               "SELECT window_start, COUNT(*) AS n FROM TABLE(HOP(TABLE events, DESCRIPTOR(ts), "
               "INTERVAL '10' MINUTE, INTERVAL '30' MINUTE)) GROUP BY window_start",
               f"SELECT w AS window_start, COUNT(*) AS n FROM (SELECT {TB} AS w FROM events UNION ALL "
               f"SELECT {TB} - INTERVAL '10 minutes' FROM events UNION ALL "
               f"SELECT {TB} - INTERVAL '20 minutes' FROM events) GROUP BY w"),
-    "l_interval_join": ("view.join_inner",
+    "l_interval_join": ("late.join",
                         "SELECT e.id AS eid, c.id AS cid FROM events e JOIN clicks c ON e.k = c.k "
                         "AND c.ts BETWEEN e.ts - INTERVAL 5 MINUTES AND e.ts + INTERVAL 5 MINUTES", None),
-    "l_lag": ("view.window",
+    "l_lag": ("late.window",
               "SELECT id, LAG(v) OVER (PARTITION BY k ORDER BY ts) AS prev FROM events", None),
-    "l_range": ("view.window",
+    "l_range": ("late.window",
                 "SELECT id, SUM(v) OVER (PARTITION BY k ORDER BY ts "
                 "RANGE BETWEEN INTERVAL 15 MINUTES PRECEDING AND CURRENT ROW) AS recent FROM events", None),
-    "l_topk": ("view.window",
+    "l_topk": ("late.window",
                "SELECT window_start, id, r FROM (SELECT window_start, id, RANK() OVER "
                "(PARTITION BY window_start ORDER BY v DESC) AS r FROM TABLE(TUMBLE(TABLE events, DESCRIPTOR(ts), "
                "INTERVAL '10' MINUTE))) t WHERE r <= 2",
                f"SELECT window_start, id, r FROM (SELECT {TB} AS window_start, id, RANK() OVER "
                f"(PARTITION BY {TB} ORDER BY v DESC) AS r FROM events) t WHERE r <= 2"),
-    "l_asof": ("view.asof",
+    "l_asof": ("late.asof",
                "SELECT e.id, c.id AS cid FROM events e LEFT ASOF JOIN clicks c MATCH_CONDITION (e.ts >= c.ts) "
                "ON e.k = c.k",
                "SELECT e.id, c.id AS cid FROM events e ASOF LEFT JOIN clicks c ON e.k = c.k AND e.ts >= c.ts"),
-    "l_no_click": ("view.subquery",
+    "l_no_click": ("late.subquery",
                    "SELECT e.id FROM events e WHERE NOT EXISTS (SELECT 1 FROM clicks c WHERE c.k = e.k "
                    "AND c.ts >= e.ts AND c.ts <= e.ts + INTERVAL 10 MINUTES)", None),
-    "l_by_k": ("view.aggregate",
+    "l_by_k": ("late.aggregate",
                "SELECT k, COUNT(*) AS n, MAX(ts) AS last_ts, MIN(ts) AS first_ts FROM events GROUP BY k", None),
 }
 

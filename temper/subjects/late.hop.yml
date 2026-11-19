@@ -1,0 +1,3 @@
+id: late.hop
+kind: late_view
+feature: sql.lateness

@@ -7,16 +7,13 @@ answers:
     process_pause: supported
     broker_pause: supported
     network_cut: supported
+    long_broker_pause: supported
+    long_network_cut: supported
     process_kill:
       unsupported: true
       reason: >
         Recovery from a crash needs fault tolerance, which "is only available in
         Feldera Enterprise Edition" (Checkpoints & Fault Tolerance). The
         open-source pipeline restarts empty.
-      tracked_by: docs/pipelines/fault-tolerance.md
-    stop_and_resume:
-      unsupported: true
-      reason: >
-        Checkpoint and resume is an Enterprise feature, so a stopped open-source
-        pipeline does not resume where it left off.
-      tracked_by: docs/pipelines/fault-tolerance.md
+      proven_by: testing/temper/test_oss_limits.py::test_kill_restarts_empty
+    stop_and_resume: supported

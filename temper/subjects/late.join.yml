@@ -1,0 +1,3 @@
+id: late.join
+kind: late_view
+feature: sql.lateness

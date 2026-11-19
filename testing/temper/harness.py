@@ -93,10 +93,16 @@ def wait_for(cond, timeout, every=0.5):
 
 
 def start(name, timeout=300):
-    r = requests.post(f"{API}/pipelines/{name}/start", params={"initial": "running"}, timeout=30)
+    r = requests.post(f"{API}/pipelines/{name}/start", params={"initial": "running", "dismiss_error": "true"}, timeout=30)
+    time.sleep(1)
     if not r.ok:
         raise RuntimeError(f"start {name}: {r.status_code} {r.text}")
-    if not wait_for(lambda: (pipeline(name) or {}).get("deployment_status") == "Running", timeout):
+    def running():
+        p = pipeline(name) or {}
+        if p.get("deployment_error") and p.get("deployment_status") == "Stopped":
+            raise RuntimeError(f"start {name}: {p['deployment_error'].get('message')}")
+        return p.get("deployment_status") == "Running"
+    if not wait_for(running, timeout):
         raise RuntimeError(f"start {name}: status {(pipeline(name) or {}).get('deployment_status')}")
 
 

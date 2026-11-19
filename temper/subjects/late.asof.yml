@@ -1,0 +1,3 @@
+id: late.asof
+kind: late_view
+feature: sql.lateness
