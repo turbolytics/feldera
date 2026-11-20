@@ -30,9 +30,10 @@ temper matrix --all-levels
 ```
 
 Compiling each program takes about five minutes the first time. The session
-compiles all eight programs at once, and the stopped container keeps them, so
-later runs skip compiling. The six worker-count pipelines reuse three of those
-programs and compile in about a minute each.
+compiles all ten programs at once, and the stopped container keeps them, so
+later runs skip compiling. The types program is the largest and takes about
+17 minutes. Every pipeline keeps its own copy of its binary, so the Docker VM
+needs about 15 GB free during a run.
 
 ## What the tests do
 
@@ -48,9 +49,19 @@ programs and compile in about a minute each.
   of each group's current MIN or MAX. A recursive view gets edges removed as
   often as added. Tables drain to empty, or are replaced in one request.
 - `test_workers.py` runs the three random-input programs again at 1 worker
-  and at 8, on their own pipelines, with the same oracle. The default runs use
+  and at 8, on the same pipelines after the default runs, with the same oracle. The default runs use
   4 workers. Worker count is a runtime setting, and the batch promise names no
   exception for it.
+- `test_types_ops.py` puts every SQL type through the operators that keep
+  state: GROUP BY, DISTINCT, an equi-join, ARG_MIN and ARG_MAX, a window
+  ORDER BY, and SUM. The oracle is a model of each type's equality and order
+  from the docs, not DuckDB: one zero and one NaN, NaN above Infinity, NULL
+  elements smallest in arrays and maps, a zoned timestamp as an instant.
+  Deletes often name a row by another spelling of its value, such as "1.50"
+  for 1.5 or a UUID in upper case. Three seeds run at 1, 4 and 8 workers. Pairs
+  the compiler refuses, such as SUM over a DATE, are proven refused one by one.
+  A separate pipeline sends +X, +X, -X in one request to check that SUM's
+  wider intermediate type absorbs the overflow.
 - `test_transactions.py` checks that nothing leaves an open transaction, and
   that each commit reaches a view as one batch.
 - `test_kafka.py` copies a Kafka topic through pauses, broker outages and
@@ -101,6 +112,8 @@ where the map checks it. "Out of scope" names the reason.
 | sql/recursion.mdx | Recursive views reach the least fixed point, as DISTINCT | `view.matches_batch` and `view.changes_add_up` on `view.recursive` |
 | sql/datetime.md | NOW() is the step time, in UTC, always increasing; a step runs every second without input; views over NOW() update | `now.increasing_utc`, `now.temporal_filter_advances` |
 | formats/json.md | Out-of-range integers and invalid dates are rejected; longer strings are kept; NaN is not supported | `input.rejects_out_of_range`, `input.rejects_invalid_date`, `input.keeps_long_strings`, `input.rejects_nan`, `input.rejects_broken_json` |
+| sql/comparisons.md, sql/float.md, sql/array.md, sql/map.md | Equality and order for every type, including NaN, -0, NULL elements and nested values | `types.operators` on six operators |
+| sql/aggregates.md | SUM computes with a wider intermediate type | `operator.sum_partial_overflow` |
 | formats/json.md, sql/types.md | Each type's JSON encoding, CHAR(n) padding, timestamp sub-second precision, decimals as strings | `types.contract` and `nulls.contract` on HTTP and Kafka |
 | connectors/sinks/kafka.md | Without fault tolerance, broker failures are retried without a delivery deadline | `delivery.no_loss`, `delivery.recovers` |
 | connectors/sinks/kafka.md | Same-key messages go to one partition in order | out of scope: exactly-once fault tolerance only (Enterprise) |

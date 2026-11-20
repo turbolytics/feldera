@@ -11,7 +11,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 | covered | exempt | failing | missing | unenforced |
 | ---: | ---: | ---: | ---: | ---: |
-| 172 | 3 | 5 | 0 | 0 |
+| 328 | 22 | 6 | 0 | 0 |
 
 ## Features
 
@@ -38,6 +38,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 | `input.errors` | Rejection of malformed records on ingress (JSON format). | ✅ |
 | `connector.postgres` | The PostgreSQL output connector in materialized mode (PostgreSQL output connector, experimental). | ✅ |
 | `runtime.workers` | The workers setting runs a pipeline on that many threads. It can change only while storage is cleared (Pipeline configuration). | ✅ |
+| `sql.type_semantics` | Equality, order and SUM for every SQL type inside stateful operators (Comparison Operations, Floating Point Operations, Array and Map comparisons, Aggregate Operations). | ✅ |
 
 ## Invariants
 
@@ -73,6 +74,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 | `late.changes_add_up` | `late.subquery` | ✅ |
 | `late.changes_add_up` | `late.tumble` | ✅ |
 | `late.changes_add_up` | `late.window` | ✅ |
+| `operator.sum_partial_overflow` | `op.sum` | ❌ |
 | `view.changes_add_up` | `view.aggregate` | ✅ |
 | `view.changes_add_up` | `view.asof` | ✅ |
 | `view.changes_add_up` | `view.grouping` | ❌ |
@@ -107,6 +109,7 @@ Exempt cells are excused by a passing proof. Regenerate with `temper matrix`.
 
 - `adhoc.consistent_snapshot` — Ad-hoc queries are evaluated "against a consistent snapshot of the pipeline's tables and views" (Ad-hoc SQL Queries). A table and two views over it agree within one query, while inputs stream in and while the pipeline is paused.
 - `late.changes_add_up` — For views over LATENESS tables too, the changes streamed to an output add up to the batch query's result once a completion token reports the input processed.
+- `operator.sum_partial_overflow` — A SUM whose total fits its result type survives one request whose rows pass the type's maximum on the way. ("Most aggregation functions produce results of the same type as the input data, but compute using higher precision intermediate data types", Aggregate Operations.) The request is +X, +X, -X, so the total is X.
 - `view.changes_add_up` — The inserts and deletes a view streams to an output, starting from its snapshot, add up to the batch query's result once a completion token reports the input processed. ("the resulting outputs have been written to all data sinks", Completion tokens.)
 - `view.lateness_preserves_output` — When every input respects its LATENESS bound, views over those tables hold exactly what the batch query returns. ("the output of the program with lateness annotations is guaranteed to be identical to outputs of the same program without annotations", Time series guide.)
 - `view.matches_batch` — After an input is fully processed, a materialized view holds exactly what the same query returns when run from scratch over the current tables. ("the state of the views always corresponds to what you'd get if you ran the queries in a batch system for the same input", What is Feldera.)
@@ -231,6 +234,42 @@ Every Feldera SQL column type (SQL types), adapted from sql-flow's sink.types la
 | `row` | ✅ | ✅ |
 | `arr_row` | ✅ | ✅ |
 | `map` | ✅ | ✅ |
+
+### `types.operators`
+
+Every Feldera SQL column type, the members of types.contract, inside each operator that keeps state. A supported answer means the operator's view equals the model at every step of three seeds of inserts and deletes, at 1, 4 and 8 workers. The model works from value classes: values the docs call equal share a class, and classes rank in the order the docs give. Deletes often name a row by another spelling of its value, such as "1.50" for 1.5. Unsupported means the compiler refuses the pair, or accepts it only by casting the value to another type.
+
+| Member | `op.distinct` | `op.group_by` | `op.join` | `op.min_max` | `op.order_by` | `op.sum` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `bool` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `i8` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `i16` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `i32` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `i64` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `u8` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `u16` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `u32` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `u64` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `real` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `double` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `dec` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `varchar` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `char` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `binary` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `varbinary` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `date` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `time` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `ts` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `tstz` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `uuid` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `variant` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `arr_int` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `arr_str` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `arr_ts` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `arr_arr` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `row` | ✅ | ✅ | ☑️ | ✅ | ✅ | ☑️ |
+| `arr_row` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
+| `map` | ✅ | ✅ | ✅ | ✅ | ✅ | ☑️ |
 
 ### `workers.contract`
 

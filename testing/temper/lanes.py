@@ -77,8 +77,24 @@ def churn():
     return test_churn.compute()
 
 
-# Worker-count lanes (test_workers.py): each program again, on its own pipeline.
-# The extra pipelines share the compiled program, so they compile in about a minute.
+def types_ops():
+    import test_types_ops
+    return test_types_ops.compute()
+
+
+def types_rej():
+    import test_types_ops
+    return test_types_ops.rejections()
+
+
+def types_overflow():
+    import test_types_ops
+    return test_types_ops.overflow()
+
+
+# Worker-count lanes (test_workers.py): each program again at 1 worker and at 8,
+# on the program's own pipeline once its default lane is done. Separate
+# pipelines would each hold another copy of the binary on a disk that is full.
 WORKER_SEEDS = {"views": [11, 23], "adv": [101, 202]}
 
 
@@ -89,7 +105,8 @@ def at_workers(prog, n):
         import test_incremental_adv
         import views
         import views_adv
-        name = WORKER_PIPELINES[(prog, n)]
+        wait(prog if n == 1 else f"{prog}_w1")  # one pipeline: the runs take turns
+        name = BASE_PIPELINE[prog]
         if prog == "churn":
             return test_churn.compute(name, n)
         module, model = {"views": (views, test_incremental.Model),
@@ -99,8 +116,8 @@ def at_workers(prog, n):
 
 
 BASE_PIPELINE = {"views": "temper_views", "adv": "temper_views_adv", "churn": "temper_churn"}
-WORKER_PIPELINES = {(prog, n): f"{BASE_PIPELINE[prog]}_w{n}" for prog in BASE_PIPELINE for n in (1, 8)}
+WORKER_RUNS = [(prog, n) for prog in BASE_PIPELINE for n in (1, 8)]
 
 LANES = {"views": views, "kafka": kafka, "gap": gap_lane, "types": types, "pg": pg, "adv": adv, "late": late,
-         "churn": churn}
-LANES.update({f"{prog}_w{n}": at_workers(prog, n) for (prog, n) in WORKER_PIPELINES})
+         "churn": churn, "types_ops": types_ops, "types_rej": types_rej, "types_overflow": types_overflow}
+LANES.update({f"{prog}_w{n}": at_workers(prog, n) for (prog, n) in WORKER_RUNS})

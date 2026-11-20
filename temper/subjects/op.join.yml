@@ -1,0 +1,39 @@
+id: op.join
+kind: operator
+feature: sql.type_semantics
+# An equi-join on the value.
+answers:
+  types.operators:
+    bool: supported
+    i8: supported
+    i16: supported
+    i32: supported
+    i64: supported
+    u8: supported
+    u16: supported
+    u32: supported
+    u64: supported
+    real: supported
+    double: supported
+    dec: supported
+    varchar: supported
+    char: supported
+    binary: supported
+    varbinary: supported
+    date: supported
+    time: supported
+    ts: supported
+    tstz: supported
+    uuid: supported
+    variant: supported
+    arr_int: supported
+    arr_str: supported
+    arr_ts: supported
+    arr_arr: supported
+    row:
+      unsupported: true
+      reason: >
+        Feldera rejects = between ROW values (Comparing ROW values).
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.join-row]
+    arr_row: supported
+    map: supported

@@ -1,0 +1,42 @@
+id: types.operators
+description: >
+  Every Feldera SQL column type, the members of types.contract, inside each
+  operator that keeps state. A supported answer means the operator's view equals
+  the model at every step of three seeds of inserts and deletes, at 1, 4 and 8
+  workers. The model works from value classes: values the docs call equal share
+  a class, and classes rank in the order the docs give. Deletes often name a row
+  by another spelling of its value, such as "1.50" for 1.5. Unsupported means
+  the compiler refuses the pair, or accepts it only by casting the value to
+  another type.
+applies_to: operator
+requires: [oss]
+members:
+  - key: bool  # BOOLEAN
+  - key: i8  # TINYINT
+  - key: i16  # SMALLINT
+  - key: i32  # INT
+  - key: i64  # BIGINT
+  - key: u8  # TINYINT UNSIGNED
+  - key: u16  # SMALLINT UNSIGNED
+  - key: u32  # INT UNSIGNED
+  - key: u64  # BIGINT UNSIGNED
+  - key: real  # REAL, with NaN, both infinities and -0.0
+  - key: double  # DOUBLE, with NaN, both infinities and -0.0
+  - key: dec  # DECIMAL(38, 10), with trailing-zero spellings
+  - key: varchar  # VARCHAR, with a combining accent and an emoji
+  - key: char  # CHAR(4), padded as the docs require of sources
+  - key: binary  # BINARY(4)
+  - key: varbinary  # VARBINARY
+  - key: date  # DATE
+  - key: time  # TIME, to nanoseconds
+  - key: ts  # TIMESTAMP
+  - key: tstz  # TIMESTAMP WITH TIME ZONE, one instant at two offsets
+  - key: uuid  # UUID, in upper and lower case
+  - key: variant  # VARIANT holding integers
+  - key: arr_int  # INT ARRAY, with NULL elements
+  - key: arr_str  # VARCHAR ARRAY
+  - key: arr_ts  # TIMESTAMP ARRAY
+  - key: arr_arr  # BIGINT ARRAY ARRAY
+  - key: row  # ROW(a INT NULL, b VARCHAR NULL), with NULL fields
+  - key: arr_row  # ROW(a INT NULL) ARRAY
+  - key: map  # MAP<VARCHAR, INT>, with a NULL value

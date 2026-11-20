@@ -1,5 +1,5 @@
-# Each claim quotes or restates Feldera's docs. The expected output is always
-# computed by DuckDB from the input the test generated, never from Feldera.
+# Each claim quotes or restates Feldera's docs. The expected output is computed
+# by DuckDB, or by a model of the documented rules, never from Feldera.
 invariants:
   - id: view.matches_batch
     claim: >
@@ -193,4 +193,15 @@ invariants:
     applies_to: sink
     class: safety
     family: delivery
+    requires: [oss]
+  - id: operator.sum_partial_overflow
+    claim: >
+      A SUM whose total fits its result type survives one request whose rows
+      pass the type's maximum on the way. ("Most aggregation functions produce
+      results of the same type as the input data, but compute using higher
+      precision intermediate data types", Aggregate Operations.) The request is
+      +X, +X, -X, so the total is X.
+    applies_to: operator+Sums
+    class: safety
+    family: consistency
     requires: [oss]

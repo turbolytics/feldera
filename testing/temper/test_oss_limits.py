@@ -20,7 +20,8 @@ ROW = {"id": 1, "cust": 2, "amount": 5, "status": "paid", "ts": "2026-01-01 00:0
 
 def loaded():
     import views
-    lanes.wait("views")  # the views lane uses this pipeline first
+    for lane in ("views", "views_w1", "views_w8"):  # these lanes use this pipeline first
+        lanes.wait(lane)
     harness.create(PIPELINE, views.program())
     harness.reset(PIPELINE)
     harness.start(PIPELINE)

@@ -18,6 +18,7 @@ sql.recursion: {oss: covered}
 sql.setop: {oss: covered}
 sql.subquery: {oss: covered}
 sql.tumble: {oss: covered}
+sql.type_semantics: {oss: covered}
 sql.types: {oss: covered}
 sql.window: {oss: covered}
 transactions: {oss: covered}

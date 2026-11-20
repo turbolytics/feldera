@@ -1,0 +1,110 @@
+id: op.sum
+kind: operator
+feature: sql.type_semantics
+implements: [Sums]
+# SUM over the value: a running total per group.
+answers:
+  types.operators:
+    bool:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses BOOLEAN.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-bool]
+    i8: supported
+    i16: supported
+    i32: supported
+    i64: supported
+    u8: supported
+    u16: supported
+    u32: supported
+    u64: supported
+    real: supported
+    double: supported
+    dec: supported
+    varchar:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument. The compiler accepts a string by casting it to a
+        number, so the operator sums numbers, not strings.
+      proven_by: testing/temper/test_types_ops.py::test_sum_of_string_is_a_cast[varchar]
+    char:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument. The compiler accepts a string by casting it to a
+        number, so the operator sums numbers, not strings.
+      proven_by: testing/temper/test_types_ops.py::test_sum_of_string_is_a_cast[char]
+    binary:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses BINARY(4).
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-binary]
+    varbinary:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses VARBINARY.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-varbinary]
+    date:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses DATE.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-date]
+    time:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIME.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-time]
+    ts:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIMESTAMP.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-ts]
+    tstz:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIMESTAMP WITH TIME ZONE.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-tstz]
+    uuid:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses UUID.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-uuid]
+    variant:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses VARIANT.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-variant]
+    arr_int:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses INT ARRAY.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-arr_int]
+    arr_str:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses VARCHAR ARRAY.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-arr_str]
+    arr_ts:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIMESTAMP ARRAY.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-arr_ts]
+    arr_arr:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses BIGINT ARRAY ARRAY.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-arr_arr]
+    row:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses ROW(a INT NULL, b VARCHAR NULL).
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-row]
+    arr_row:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses ROW(a INT NULL) ARRAY.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-arr_row]
+    map:
+      unsupported: true
+      reason: >
+        SUM takes a numeric argument (Aggregate Operations), and the compiler refuses MAP<VARCHAR, INT>.
+      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.sum-map]

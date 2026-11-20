@@ -55,13 +55,15 @@ def feldera():
     import views_adv
     import views_churn
     import views_late
+    import test_types_ops
+    import views_types
     programs = {
         "temper_views": views.program(), "temper_views_adv": views_adv.program(),
         "temper_views_late": views_late.program(), test_kafka.PIPELINE: test_kafka.program(),
         gap.GAP: gap.GAP_SQL, gap.TYPES: gap.types_sql(), gap.PG: gap.pg_sql(),
-        "temper_churn": views_churn.program()}
-    # The worker-count pipelines run the same programs (test_workers.py).
-    programs.update({name: programs[lanes.BASE_PIPELINE[prog]] for (prog, _), name in lanes.WORKER_PIPELINES.items()})
+        "temper_churn": views_churn.program(),
+        test_types_ops.PIPELINE: views_types.program(test_types_ops.SKIP),
+        "temper_types_overflow": test_types_ops.overflow_sql()}
     errors = gap.compile_all(programs)
     bad = {k: v for k, v in errors.items() if v}
     if bad:

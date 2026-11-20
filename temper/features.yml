@@ -63,3 +63,6 @@ features:
   - id: runtime.workers
     description: The workers setting runs a pipeline on that many threads. It can change only while storage is cleared (Pipeline configuration).
     requires: [oss]
+  - id: sql.type_semantics
+    description: Equality, order and SUM for every SQL type inside stateful operators (Comparison Operations, Floating Point Operations, Array and Map comparisons, Aggregate Operations).
+    requires: [oss]

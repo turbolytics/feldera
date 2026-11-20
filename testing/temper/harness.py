@@ -57,8 +57,15 @@ def wait_api(timeout=180):
 
 
 def pipeline(name):
-    r = requests.get(f"{API}/pipelines/{name}", timeout=10)
-    return r.json() if r.ok else None
+    # The API answers slowly while a large program compiles; retry a slow status read.
+    for attempt in range(6):
+        try:
+            r = requests.get(f"{API}/pipelines/{name}", timeout=30)
+            return r.json() if r.ok else None
+        except requests.exceptions.Timeout:
+            if attempt == 5:
+                raise
+            time.sleep(5)
 
 
 def create(name, sql, runtime=None, compile_timeout=900):
@@ -66,15 +73,18 @@ def create(name, sql, runtime=None, compile_timeout=900):
     existing = pipeline(name)
     if existing and existing.get("program_code") == sql and existing.get("program_status") == "Success":
         return existing  # compiled already; compiling takes minutes
-    if existing:
+    compiling = existing and existing.get("program_code") == sql and \
+        existing.get("program_status") in ("Pending", "CompilingSql", "CompilingRust")
+    if existing and not compiling:
         stop(name, force=True)
         requests.post(f"{API}/pipelines/{name}/clear", timeout=30)
         wait_for(lambda: (pipeline(name) or {}).get("storage_status") in (None, "Cleared"), 120)
         requests.delete(f"{API}/pipelines/{name}", timeout=30)
-    body = {"name": name, "program_code": sql, "runtime_config": {"workers": 4, **(runtime or {})}}
-    r = requests.put(f"{API}/pipelines/{name}", json=body, timeout=30)
-    if not r.ok:
-        raise RuntimeError(f"create {name}: {r.status_code} {r.text}")
+    if not compiling:  # an identical program mid-compile: wait for it instead of starting over
+        body = {"name": name, "program_code": sql, "runtime_config": {"workers": 4, **(runtime or {})}}
+        r = requests.put(f"{API}/pipelines/{name}", json=body, timeout=30)
+        if not r.ok:
+            raise RuntimeError(f"create {name}: {r.status_code} {r.text}")
     deadline = time.time() + compile_timeout
     while time.time() < deadline:
         p = pipeline(name)
@@ -159,12 +169,14 @@ def wait_complete(name, token, timeout=120):
     raise TimeoutError(f"token {token} not complete after {timeout}s")
 
 
-def query(name, sql):
-    """Runs an ad-hoc query and returns rows as dicts."""
+def query(name, sql, exact=False):
+    """Runs an ad-hoc query and returns rows as dicts. exact keeps numbers with a
+    fraction as Decimal, digit for digit."""
     r = requests.get(f"{API}/pipelines/{name}/query", params={"sql": sql, "format": "json"}, timeout=120)
     if not r.ok:
         raise RuntimeError(f"query {sql!r}: {r.status_code} {r.text[:500]}")
-    return [json.loads(line) for line in r.text.splitlines() if line.strip()]
+    kw = {"parse_float": __import__("decimal").Decimal} if exact else {}
+    return [json.loads(line, **kw) for line in r.text.splitlines() if line.strip()]
 
 
 class ChangeStream(threading.Thread):
@@ -283,7 +295,7 @@ class SleepGuard:
 
 from concurrent.futures import ThreadPoolExecutor
 
-_pool = ThreadPoolExecutor(max_workers=16)
+_pool = ThreadPoolExecutor(max_workers=24)
 _futures = {}
 _futures_lock = threading.Lock()
 

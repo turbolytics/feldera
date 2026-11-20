@@ -1,7 +1,7 @@
 """Views equal the batch query at 1 and 8 workers (workers.contract).
 
-The default runs use 4 workers. Here each program runs again on its own
-pipeline at 1 worker and at 8, with the same method: after every step, each
+The default runs use 4 workers. Here each program runs again at 1 worker and
+at 8, on the same pipeline after its default run, with the same method: after every step, each
 view is read ad hoc and as the sum of its change stream, and compared with
 DuckDB. A view passes a member when both reads match at every step of every
 seed.
