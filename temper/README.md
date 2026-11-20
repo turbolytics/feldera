@@ -70,6 +70,11 @@ needs about 15 GB free during a run.
   consistency, primary keys, recursion, `NOW()`, materialized views, malformed
   input, every SQL type over HTTP and Kafka, and the PostgreSQL sink.
 
+`repro_rollup_empty.sh` reproduces the one consistency failure on its own,
+with curl against any running Feldera: a ROLLUP view has no grand-total row
+when its table is empty, where Postgres and DuckDB return (NULL, NULL, 0, NULL).
+Run `FELDERA_URL=http://localhost:8080 testing/temper/repro_rollup_empty.sh`.
+
 ## Speed
 
 Work on different pipelines runs at the same time (`lanes.py`): the session
