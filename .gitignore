@@ -113,3 +113,6 @@ js-packages/support-bundle-triage/
 
 # Local scratch files
 /.tmp/
+
+# Temper evidence and scenario logs
+.temper/

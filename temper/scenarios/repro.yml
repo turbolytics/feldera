@@ -1,0 +1,40 @@
+# Deterministic reproductions of what the audit found, on Feldera 0.383.0.
+# Each fails with one command:
+#
+#   temper scenarios run --scenario <id>
+#
+# Each compiles a fresh pipeline, so a run takes a few minutes.
+
+- id: feldera.decimal_sum_overflow
+  runner: temper
+  name: A DECIMAL SUM whose total fits survives a request that passes the type's maximum on the way
+  description: >
+    One request inserts +X, +X and -X into a DECIMAL(38, 10) column, with
+    X = 9e27. The total is X, which fits. Feldera merges the two identical
+    rows into one row of weight 2 and multiplies X by 2, which overflows;
+    the pipeline must keep running and report SUM = X.
+  subject: op.sum
+  compose: temper/compose.yml
+  covers: [operator.sum_partial_overflow]
+  events:
+    - up: {feldera: 1}
+    - check:
+        covers: operator.sum_partial_overflow       # 1 when the pipeline stops or the SUM is wrong
+        run: [oracle, python, /recipe/feldera_check.py, decimal-sum]
+
+- id: feldera.grouping_empty
+  runner: temper
+  name: ROLLUP, CUBE and GROUPING SETS views keep their grand-total row on an empty table
+  description: >
+    A grouping set () over no rows is one row: COUNT 0, SUM NULL, as
+    PostgreSQL and DuckDB return. Each view is read on a fresh empty table,
+    after one insert, and after that row is deleted, and compared with
+    SQL's answer computed from scratch.
+  subject: view.grouping
+  compose: temper/compose.yml
+  covers: [view.matches_batch]
+  events:
+    - up: {feldera: 1}
+    - check:
+        covers: view.matches_batch                  # (view, step) pairs that differ from SQL's answer
+        run: [oracle, python, /recipe/feldera_check.py, grouping-empty]

@@ -3,6 +3,25 @@
 This map checks Feldera's documented guarantees in the open-source edition,
 0.383.0. The tests are black-box pytest in `testing/temper`.
 
+## Reproduce the findings
+
+Each finding is a scenario in `temper/scenarios/repro.yml`. One command
+reproduces it, with Docker and Temper installed
+(`brew install turbolytics/tap/temper`, or
+`go install github.com/turbolytics/temper/cmd/temper@v0.1.5`):
+
+```sh
+temper scenarios run --scenario feldera.decimal_sum_overflow   # #8032
+temper scenarios run --scenario feldera.grouping_empty         # #8033
+```
+
+Each starts the pipeline manager (`temper/compose.yml`), compiles a fresh
+pipeline, prints its verdict, and exits 1 when the bug reproduces. A run
+takes a few minutes, most of it the compile. The checks are in
+`temper/recipe/feldera_check.py`, standard-library Python: the grouping
+check computes SQL's answer for ROLLUP, CUBE and GROUPING SETS itself. The
+full log is in `.temper/scenarios/<scenario>/<subject>/run.log`.
+
 ## Setup
 
 ```sh

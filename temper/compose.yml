@@ -1,0 +1,9 @@
+# The topology for Feldera's scenarios (temper/scenarios): the open-source
+# pipeline manager, and a one-shot oracle with the checks.
+services:
+  feldera:
+    image: images.feldera.com/feldera/pipeline-manager:0.383.0
+  oracle:
+    image: python:3.12-slim
+    volumes: ["./recipe:/recipe:ro"]
+    command: ["true"]
