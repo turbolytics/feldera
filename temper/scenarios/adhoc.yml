@@ -1,0 +1,13 @@
+- id: feldera.adhoc
+  runner: temper
+  name: Ad-hoc queries read one consistent snapshot, and only materialized tables and views
+  description: >
+    One query reads a table and two views over it, 60 times while inputs stream in and 20 times while the pipeline is paused; the table and views always agree. A table and a view not declared materialized are refused.
+  subject: adhoc.datafusion
+  compose: temper/compose.yml
+  covers: [adhoc.consistent_snapshot, adhoc.only_materialized, sql.adhoc]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [adhoc, "{subject}"], decides: [adhoc.consistent_snapshot, adhoc.only_materialized, sql.adhoc]}

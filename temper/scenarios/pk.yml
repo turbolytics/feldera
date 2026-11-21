@@ -1,0 +1,13 @@
+- id: feldera.primary_key
+  runner: temper
+  name: A keyed table applies inserts, deletes and updates by key, and ignores missing keys
+  description: >
+    Inserts overwrite an existing key, even twice in one request; a delete removes by key whatever its other columns say; an update changes only the columns it names; a delete or update of a missing key is ignored.
+  subject: table.primary_key
+  compose: temper/compose.yml
+  covers: [pk.insert_overwrites, pk.delete_missing_ignored, pk.delete_by_key, pk.update_changes_columns, pk.update_missing_ignored, sql.primary_key]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [pk, "{subject}"], decides: [pk.insert_overwrites, pk.delete_missing_ignored, pk.delete_by_key, pk.update_changes_columns, pk.update_missing_ignored, sql.primary_key]}

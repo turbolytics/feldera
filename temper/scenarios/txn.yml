@@ -1,0 +1,13 @@
+- id: feldera.transactions
+  runner: temper
+  name: Transactions buffer their input, commit as one batch per view, and match every input after
+  description: >
+    Five requests arrive inside a transaction while two views stream their changes. Nothing streams until the commit; the commit arrives as one batch per view; then both reads of every view match all inputs.
+  subject: txn.http
+  compose: temper/compose.yml
+  covers: [txn.no_output_while_open, txn.commit_is_one_batch, txn.matches_batch_after_commit, transactions]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [txn, "{subject}"], decides: [txn.no_output_while_open, txn.commit_is_one_batch, txn.matches_batch_after_commit, transactions]}

@@ -1,0 +1,121 @@
+# Views over LATENESS tables equal the batch query when inputs respect their
+# bounds, by both reads. One scenario per late subject.
+
+- id: feldera.late_aggregate
+  runner: temper
+  name: The aggregate view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.aggregate
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+
+- id: feldera.late_asof
+  runner: temper
+  name: The asof view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.asof
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+
+- id: feldera.late_hop
+  runner: temper
+  name: The hop view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.hop
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+
+- id: feldera.late_join
+  runner: temper
+  name: The join view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.join
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+
+- id: feldera.late_subquery
+  runner: temper
+  name: The subquery view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.subquery
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+
+- id: feldera.late_tumble
+  runner: temper
+  name: The tumble view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.tumble
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+
+- id: feldera.late_window
+  runner: temper
+  name: The window view over LATENESS tables equals its query without lateness, by both reads
+  description: >
+    Time moves forward and no row is sent or deleted more than 50 minutes
+    behind the latest timestamp, inside the 1-hour bound. After each request
+    the view is compared with DuckDB running its query with no lateness, by
+    the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
+  subject: late.window
+  compose: temper/compose.yml
+  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}

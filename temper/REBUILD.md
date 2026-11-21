@@ -92,3 +92,4 @@ community edition answers 501 to a graceful stop).
 Progress, with commits and every ruling, is kept below as work lands.
 
 - 2026-11-21: step 2 done. Topology (feldera, kafka, postgres, oracle, external compiler volume), oracle api.py, feldera.input: 6 of 6 pass, matching @68df7b1. Ruling: decides lists name each claim; only <lattice>/* is a pattern.
+- 2026-11-21: step 3 written (views: 12 scenarios; lateness: 7) and step 4 written (txn, pk, adhoc, now). view.grouping reproduces #8033 independently: all 5 cells fail, only on empty-table steps. Ruling: transaction completion is detected by both reads matching all inputs (the commit API is asynchronous), and each unfamiliar API response is logged to stderr.

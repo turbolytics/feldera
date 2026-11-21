@@ -1,0 +1,13 @@
+- id: feldera.now
+  runner: temper
+  name: NOW() is UTC and steps every second, and a temporal filter lets rows go with no input
+  description: >
+    NOW() is read 16 times over 8 seconds with no input: it never goes back, stays within 10 seconds of the UTC wall clock, and takes new values. A row in a five-second temporal filter leaves about five seconds after its timestamp, with no input.
+  subject: clock.now
+  compose: temper/compose.yml
+  covers: [now.increasing_utc, now.temporal_filter_advances, sql.now]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [now, "{subject}"], decides: [now.increasing_utc, now.temporal_filter_advances, sql.now]}

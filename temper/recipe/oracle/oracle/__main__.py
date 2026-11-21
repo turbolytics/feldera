@@ -4,10 +4,16 @@ stderr, which the run log keeps."""
 import json
 import sys
 
-from . import input_errors
+from . import adhoc, input_errors, lateness, now, pk, txn, views
 
 AREAS = {
     "input": input_errors.run,
+    "views": views.run,
+    "lateness": lateness.run,
+    "txn": txn.run,
+    "pk": pk.run,
+    "adhoc": adhoc.run,
+    "now": now.run,
 }
 
 

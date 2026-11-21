@@ -1,0 +1,208 @@
+# Every materialized view equals its query run from scratch, by both reads,
+# at 4 workers and again at 1 and 8. One scenario per view subject, so each
+# subject's feature lands on its own record. Each run compiles nothing new:
+# the views program is in the compiler cache after the first.
+
+- id: feldera.view_aggregate
+  runner: temper
+  name: The aggregate view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.aggregate
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.aggregate]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.aggregate]}
+
+- id: feldera.view_asof
+  runner: temper
+  name: The asof view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.asof
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.asof]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.asof]}
+
+- id: feldera.view_grouping
+  runner: temper
+  name: The grouping view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.grouping
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.grouping]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.grouping]}
+
+- id: feldera.view_hop
+  runner: temper
+  name: The hop view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.hop
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.hop]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.hop]}
+
+- id: feldera.view_join_full
+  runner: temper
+  name: The join full view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.join_full
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]}
+
+- id: feldera.view_join_inner
+  runner: temper
+  name: The join inner view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.join_inner
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]}
+
+- id: feldera.view_join_left
+  runner: temper
+  name: The join left view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.join_left
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]}
+
+- id: feldera.view_recursive
+  runner: temper
+  name: The recursive view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.recursive
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.recursion]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.recursion]}
+
+- id: feldera.view_setop
+  runner: temper
+  name: The setop view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.setop
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.setop]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.setop]}
+
+- id: feldera.view_subquery
+  runner: temper
+  name: The subquery view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.subquery
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.subquery]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.subquery]}
+
+- id: feldera.view_tumble
+  runner: temper
+  name: The tumble view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.tumble
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.tumble]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.tumble]}
+
+- id: feldera.view_window
+  runner: temper
+  name: The window view equals its query run from scratch, by both reads, at 1, 4 and 8 workers
+  description: >
+    A seeded workload inserts and deletes rows in single requests, and
+    drains a table to empty. Before the first request and after each, the
+    view is compared with DuckDB running its query over the same rows, by
+    the ad-hoc read and by its change stream summed from empty.
+  subject: view.window
+  compose: temper/compose.yml
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.window]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.window]}
