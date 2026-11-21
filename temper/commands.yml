@@ -1,0 +1,7 @@
+commands:
+  compiler_cache:
+    doc: Create the external volume that keeps Feldera's compiler cache across runs (idempotent).
+    host: [docker, volume, create, temper-feldera-compiler]
+  oracle:
+    doc: Decide one area's claims for one subject; prints a results object.
+    run: [oracle, python, -m, oracle]

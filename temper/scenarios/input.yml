@@ -1,0 +1,19 @@
+- id: feldera.input
+  runner: temper
+  name: The JSON ingress rejects malformed records and keeps long strings whole
+  description: >
+    Out-of-range integers, invalid dates, NaN and a broken JSON body are each
+    rejected with nothing ingested; a string longer than its VARCHAR is kept
+    untruncated. Each claim quotes Feldera's JSON format docs.
+  subject: input.http_json
+  compose: temper/compose.yml
+  covers: [input.rejects_out_of_range, input.rejects_invalid_date, input.keeps_long_strings,
+           input.rejects_nan, input.rejects_broken_json, input.errors]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results:
+          oracle: [input, "{subject}"]
+          decides: [input.rejects_out_of_range, input.rejects_invalid_date, input.keeps_long_strings,
+                    input.rejects_nan, input.rejects_broken_json, input.errors]
