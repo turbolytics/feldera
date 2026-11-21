@@ -1,0 +1,28 @@
+- id: feldera.type_semantics
+  runner: temper
+  name: Every SQL type behaves by the docs' equality and order inside each operator that keeps state
+  description: >
+    Rows are inserted by one spelling of a value and often deleted by
+    another ("1.50" for 1.5, an upper-case UUID, one instant at another
+    offset). After every request, the operator's view is compared with a
+    model of each type's equality classes and order from the docs, for three
+    seeds at 4, 1 and 8 workers. Pairs the compiler refuses, SUM over a
+    non-numeric type and = between ROW values, are proven refused.
+  compose: temper/compose.yml
+  covers: [types.operators/bool, types.operators/i8, types.operators/i16, types.operators/i32, types.operators/i64, types.operators/u8, types.operators/u16, types.operators/u32, types.operators/u64, types.operators/real, types.operators/double, types.operators/dec, types.operators/varchar, types.operators/char, types.operators/binary, types.operators/varbinary, types.operators/date, types.operators/time, types.operators/ts, types.operators/tstz, types.operators/uuid, types.operators/variant, types.operators/arr_int, types.operators/arr_str, types.operators/arr_ts, types.operators/arr_arr, types.operators/row, types.operators/arr_row, types.operators/map,
+           sql.type_semantics]
+  subjects:
+    op.distinct: {}
+    op.group_by: {}
+    op.join: {}
+    op.min_max: {}
+    op.order_by: {}
+    op.sum: {}
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results:
+          oracle: [type_ops, "{subject}"]
+          decides: [types.operators/*, sql.type_semantics]
+          exempts: [types.operators/*]

@@ -34,6 +34,6 @@ answers:
       unsupported: true
       reason: >
         Feldera rejects = between ROW values (Comparing ROW values).
-      proven_by: testing/temper/test_types_ops.py::test_compiler_rejects[op.join-row]
+      proven_by: feldera.type_semantics/op.join/types.operators/row
     arr_row: supported
     map: supported

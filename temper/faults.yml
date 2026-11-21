@@ -1,0 +1,17 @@
+faults:
+  long_broker_pause:
+    doc: Freeze the Kafka broker for 90 s, longer than the client's request and session timeouts.
+    target: kafka
+    do: pause
+    for: 90s
+  long_network_cut:
+    doc: Cut the network between the pipeline and Kafka for 90 s.
+    target: kafka
+    do: disconnect
+    network: default
+    for: 90s
+  pg_pause:
+    doc: Freeze PostgreSQL for 6 s while the pipeline writes to it.
+    target: postgres
+    do: pause
+    for: 6s

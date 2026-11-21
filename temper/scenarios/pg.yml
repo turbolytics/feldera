@@ -1,0 +1,23 @@
+- id: feldera.postgres
+  runner: temper
+  name: The PostgreSQL output keeps its table equal to the view after every token, through a PostgreSQL pause
+  description: >
+    In materialized mode the connector keeps the target table a snapshot of
+    the view. After each of six requests, the table must equal the view once
+    the completion token reports the request written; then PostgreSQL
+    pauses for 6 s while a feeder keeps writing, and six more requests must
+    leave the table equal to the view.
+  subject: sink.postgres
+  compose: temper/compose.yml
+  covers: [pg.mirrors_view, connector.postgres]
+  events:
+    - compiler_cache: []
+    - up: {postgres: 1, feldera: 1}
+    - oracle: [pg, setup]
+    - check: {covers: pg.mirrors_view, oracle: [pg, steps]}
+    - hold: {name: feeder, oracle: [pg, feed]}
+    - sleep: 3s
+    - fault: pg_pause
+    - release: feeder
+    - check: {covers: pg.mirrors_view, oracle: [pg, steps]}
+    - check: {covers: connector.postgres, oracle: [pg, steps]}

@@ -1,0 +1,41 @@
+- id: feldera.kafka
+  runner: temper
+  name: Records flow from Kafka through a pipeline to Kafka while the broker, the network and the pipeline fail
+  description: >
+    A producer writes a record every 20 ms for the whole scenario. After each
+    fault heals, every record in the input topic must reach the output topic
+    within two minutes, with the pipeline still Running. Recovery from a kill
+    and a graceful stop are Enterprise-only, so those two are proofs of
+    refusal: the pipeline restarts empty, and a graceful stop answers 501.
+  subject: path.kafka_kafka
+  compose: temper/compose.yml
+  covers: [faults.contract/pause_api, faults.contract/process_pause, faults.contract/broker_pause,
+           faults.contract/network_cut, faults.contract/long_broker_pause, faults.contract/long_network_cut,
+           faults.contract/process_kill, faults.contract/stop_and_resume,
+           delivery.no_loss, delivery.recovers, delivery.no_duplicates, connector.kafka]
+  seed: 7
+  events:
+    - compiler_cache: []
+    - up: {kafka: 1, feldera: 1}
+    - oracle: [kafka, setup]
+    - hold: {name: producer, oracle: [kafka, produce]}
+    - sleep: 10s
+    - oracle: [kafka, pause-api]
+    - check: {covers: faults.contract/pause_api, oracle: [kafka, caught-up]}
+    - fault: pipeline.pause                         # SIGSTOP and SIGCONT of the pipeline's container
+    - check: {covers: faults.contract/process_pause, oracle: [kafka, caught-up]}
+    - fault: kafka.pause
+    - check: {covers: faults.contract/broker_pause, oracle: [kafka, caught-up]}
+    - fault: kafka.disconnect
+    - check: {covers: faults.contract/network_cut, oracle: [kafka, caught-up]}
+    - fault: long_broker_pause
+    - check: {covers: faults.contract/long_broker_pause, oracle: [kafka, caught-up]}
+    - fault: long_network_cut
+    - check: {covers: faults.contract/long_network_cut, oracle: [kafka, caught-up]}
+    - check: {covers: delivery.no_loss, oracle: [kafka, caught-up]}
+    - check: {covers: delivery.recovers, oracle: [kafka, caught-up]}
+    - check: {covers: connector.kafka, oracle: [kafka, caught-up]}
+    - check: {exempts: faults.contract/stop_and_resume, oracle: [kafka, graceful-stop-refused]}
+    - check: {exempts: delivery.no_duplicates, oracle: [kafka, graceful-stop-refused]}
+    - exec: [feldera, sh, -c, "for p in /proc/[0-9]*; do grep -q local-runner $p/cmdline 2>/dev/null && kill -9 ${p#/proc/}; done; true"]
+    - check: {exempts: faults.contract/process_kill, oracle: [kafka, kill-restarts-empty]}

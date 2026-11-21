@@ -1,0 +1,44 @@
+# Every SQL type, and every place a NULL can sit, comes back equal through
+# each transport: ad-hoc query and change stream for HTTP, Kafka JSON for
+# Kafka.
+
+- id: feldera.types_http
+  runner: temper
+  name: Every SQL type and every NULL comes back equal through the HTTP transport
+  description: >
+    One wide table holds a column per SQL type; each row carries edge-case
+    values (minimums, maximums, a 38-digit decimal, unicode and escapes,
+    sub-second times, a zoned timestamp), and one row carries a NULL in each
+    place a NULL can sit. Each value must come back equal by the docs'
+    equality.
+  subject: transport.http
+  compose: temper/compose.yml
+  covers: [types.contract/bool, types.contract/i8, types.contract/i16, types.contract/i32, types.contract/i64, types.contract/u8, types.contract/u16, types.contract/u32, types.contract/u64, types.contract/real, types.contract/double, types.contract/dec, types.contract/varchar, types.contract/char, types.contract/binary, types.contract/varbinary, types.contract/date, types.contract/time, types.contract/ts, types.contract/tstz, types.contract/uuid, types.contract/variant, types.contract/arr_int, types.contract/arr_str, types.contract/arr_ts, types.contract/arr_arr, types.contract/row, types.contract/arr_row, types.contract/map,
+           nulls.contract/column, nulls.contract/array_element, nulls.contract/map_value, nulls.contract/row_field, nulls.contract/array_of_rows_field,
+           sql.types, connector.http]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - check:
+        results: {oracle: [types, "{subject}"], decides: [types.contract/*, nulls.contract/*, sql.types, connector.http]}
+
+- id: feldera.types_kafka
+  runner: temper
+  name: Every SQL type and every NULL comes back equal through the Kafka transport
+  description: >
+    One wide table holds a column per SQL type; each row carries edge-case
+    values (minimums, maximums, a 38-digit decimal, unicode and escapes,
+    sub-second times, a zoned timestamp), and one row carries a NULL in each
+    place a NULL can sit. Each value must come back equal by the docs'
+    equality.
+  subject: transport.kafka
+  compose: temper/compose.yml
+  covers: [types.contract/bool, types.contract/i8, types.contract/i16, types.contract/i32, types.contract/i64, types.contract/u8, types.contract/u16, types.contract/u32, types.contract/u64, types.contract/real, types.contract/double, types.contract/dec, types.contract/varchar, types.contract/char, types.contract/binary, types.contract/varbinary, types.contract/date, types.contract/time, types.contract/ts, types.contract/tstz, types.contract/uuid, types.contract/variant, types.contract/arr_int, types.contract/arr_str, types.contract/arr_ts, types.contract/arr_arr, types.contract/row, types.contract/arr_row, types.contract/map,
+           nulls.contract/column, nulls.contract/array_element, nulls.contract/map_value, nulls.contract/row_field, nulls.contract/array_of_rows_field,
+           sql.types, connector.kafka]
+  events:
+    - compiler_cache: []
+    - up: {feldera: 1}
+    - up: {kafka: 1}
+    - check:
+        results: {oracle: [types, "{subject}"], decides: [types.contract/*, nulls.contract/*, sql.types, connector.kafka]}

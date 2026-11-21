@@ -4,7 +4,7 @@ stderr, which the run log keeps."""
 import json
 import sys
 
-from . import adhoc, input_errors, lateness, now, pk, txn, views
+from . import adhoc, input_errors, kafka, lateness, now, pg, pk, txn, type_ops, types_contract, views
 
 AREAS = {
     "input": input_errors.run,
@@ -14,6 +14,10 @@ AREAS = {
     "pk": pk.run,
     "adhoc": adhoc.run,
     "now": now.run,
+    "types": types_contract.run,
+    "kafka": kafka.run,
+    "type_ops": type_ops.run,
+    "pg": pg.run,
 }
 
 
