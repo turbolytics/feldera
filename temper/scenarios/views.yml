@@ -13,12 +13,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.aggregate
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.aggregate]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.aggregate]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.aggregate]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.aggregate]}
 
 - id: feldera.view_asof
   runner: temper
@@ -30,12 +30,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.asof
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.asof]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.asof]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.asof]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.asof]}
 
 - id: feldera.view_grouping
   runner: temper
@@ -47,12 +47,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.grouping
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.grouping]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.grouping]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.grouping]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.grouping]}
 
 - id: feldera.view_hop
   runner: temper
@@ -64,12 +64,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.hop
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.hop]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.hop]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.hop]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.hop]}
 
 - id: feldera.view_join_full
   runner: temper
@@ -81,12 +81,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.join_full
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.join]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.join]}
 
 - id: feldera.view_join_inner
   runner: temper
@@ -98,12 +98,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.join_inner
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.join]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.join]}
 
 - id: feldera.view_join_left
   runner: temper
@@ -115,12 +115,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.join_left
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.join]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.join]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.join]}
 
 - id: feldera.view_recursive
   runner: temper
@@ -132,12 +132,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.recursive
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.recursion]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.recursion]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.recursion]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.recursion]}
 
 - id: feldera.view_setop
   runner: temper
@@ -149,12 +149,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.setop
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.setop]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.setop]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.setop]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.setop]}
 
 - id: feldera.view_subquery
   runner: temper
@@ -166,12 +166,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.subquery
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.subquery]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.subquery]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.subquery]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.subquery]}
 
 - id: feldera.view_tumble
   runner: temper
@@ -183,12 +183,12 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.tumble
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.tumble]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.tumble]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.tumble]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.tumble]}
 
 - id: feldera.view_window
   runner: temper
@@ -200,9 +200,9 @@
     the ad-hoc read and by its change stream summed from empty.
   subject: view.window
   compose: temper/compose.yml
-  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.window]
+  covers: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.window]
   events:
     - compiler_cache: []
     - up: {feldera: 1}
     - check:
-        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, sql.window]}
+        results: {oracle: [views, "{subject}"], decides: [view.matches_batch, view.changes_add_up, workers.contract/w1, workers.contract/w8, runtime.workers, sql.window]}

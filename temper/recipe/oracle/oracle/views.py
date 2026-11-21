@@ -287,4 +287,5 @@ def run(subject):
         a, s = workload(views, 1 + w, f"{w} workers")
         out[f"workers.contract/w{w}"] = a + s
     out[feature] = sum(out.values())
+    out["runtime.workers"] = out["workers.contract/w1"] + out["workers.contract/w8"]
     return out
