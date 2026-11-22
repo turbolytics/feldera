@@ -22,10 +22,10 @@ NAME = "type_ops"
 # member -> classes in ascending order; each class lists equal spellings.
 CLASSES = {
     "bool": [[False], [True]],
-    "i8": [[-128], [0], [127]],
-    "i16": [[-32768], [0], [32767]],
-    "i32": [[-2147483648], [0], [2147483647]],
-    "i64": [[-9223372036854775808], [0], [9223372036854775807]],
+    "i8": [[-128], [0], [1], [127]],
+    "i16": [[-32768], [0], [1], [32767]],
+    "i32": [[-2147483648], [0], [1], [2147483647]],
+    "i64": [[-9223372036854775808], [0], [1], [9223372036854775807]],
     "u8": [[0], [7], [255]],
     "u16": [[0], [7], [65535]],
     "u32": [[0], [7], [4294967295]],
@@ -34,7 +34,10 @@ CLASSES = {
     "double": [[-2.5], [0.0, -0.0], [0.1]],
     "dec": [["-0.5", "-0.50"], ["0", "0.0"], ["1.5", "1.50", "1.500"]],
     "varchar": [["A"], ["a"], ["b"]],
-    "char": [["a"], ["ab", "ab  "], ["b"]],
+    # CHAR(4) values padded to their length: "the runtime also expects data
+    # sources to provide correctly padded data" (sql/types.md), so padding is
+    # the only spelling, as in the original harness.
+    "char": [["a   "], ["ab  "], ["b   "]],
     "binary": [[[0, 0, 0, 1]], [[0, 0, 0, 2]], [[255, 0, 0, 0]]],
     "varbinary": [[[]], [[0]], [[1, 2]]],
     "date": [["1970-01-01"], ["2026-01-01"], ["9999-12-31"]],
@@ -62,8 +65,27 @@ OPS = {
     "join": "SELECT a.id AS l, b.id AS r FROM t_{m} a JOIN t_{m} b ON a.v = b.v",
     "min_max": "SELECT g, ARG_MIN(id, v) AS lo, ARG_MAX(id, v) AS hi FROM t_{m} GROUP BY g",
     "order_by": "SELECT id, v FROM (SELECT id, v, ROW_NUMBER() OVER (PARTITION BY g ORDER BY v, id) AS rn FROM t_{m}) WHERE rn <= 2",
-    "sum": "SELECT g, SUM(v) AS s FROM t_{m} GROUP BY g",
+    "sum": "SELECT g, SUM(v) AS s FROM t_{m}{where} GROUP BY g",
 }
+
+# SUM runs over small values only, so a total never passes the type's range
+# (at most 29 rows of 1, or of 7, fit even TINYINT): an overflow panics the
+# pipeline, and SUM's overflow is a separate claim with its own check. The
+# original harness (testing/temper/views_types.py) restricted SUM the same way.
+SUM_ONLY = {"i8": (0, 1), "i16": (0, 1), "i32": (0, 1), "i64": (0, 1),
+            "u8": (0, 7), "u16": (0, 7), "u32": (0, 7), "u64": (0, 7)}
+
+
+def body(op, m):
+    where = ""
+    if op == "sum" and m in SUM_ONLY:
+        # Literals cast to the column's own type: a bare integer literal makes
+        # Feldera compare an unsigned column as a signed INTEGER, and the
+        # unsigned maximum then panics the pipeline (a candidate finding,
+        # probed separately).
+        t = TYPES[m][0]
+        where = f" WHERE v IN ({', '.join(f'CAST({x} AS {t})' for x in SUM_ONLY[m])})"
+    return OPS[op].format(m=m, where=where)
 
 
 # SUM over a string compiles, but only by casting the strings to numbers.
@@ -78,9 +100,9 @@ def program():
     parts = []
     for m, (sql_type, _) in TYPES.items():
         parts.append(f"CREATE TABLE t_{m} (id INT NOT NULL, g INT NOT NULL, v {sql_type});")
-        for op, body in OPS.items():
+        for op in OPS:
             if not refused(op, m):
-                parts.append(f"CREATE MATERIALIZED VIEW {op}_{m} AS {body.format(m=m)};")
+                parts.append(f"CREATE MATERIALIZED VIEW {op}_{m} AS {body(op, m)};")
     return "\n".join(parts)
 
 
@@ -121,7 +143,10 @@ def expected(op, m, rows):
     if op == "sum":
         sums = {}
         for g, c in rows.values():
-            sums[g] = sums.get(g, 0) + float(str(CLASSES[m][c][0]))
+            v = CLASSES[m][c][0]
+            if m in SUM_ONLY and v not in SUM_ONLY[m]:
+                continue
+            sums[g] = sums.get(g, 0) + float(str(v))
         return sorted((g, round(s, 6)) for g, s in sums.items())
 
 
@@ -184,7 +209,7 @@ def prove_refused(op, m):
     """0 when the compiler refuses the pair, as declared."""
     name = f"refuse_{op}_{m}"
     sql_type = TYPES[m][0]
-    sql = f"CREATE TABLE t_{m} (id INT NOT NULL, g INT NOT NULL, v {sql_type});\nCREATE MATERIALIZED VIEW v AS {OPS[op].format(m=m)};"
+    sql = f"CREATE TABLE t_{m} (id INT NOT NULL, g INT NOT NULL, v {sql_type});\nCREATE MATERIALIZED VIEW v AS {body(op, m)};"
     api.call("PUT", f"/pipelines/{name}", {"name": name, "program_code": sql})
 
     # SqlError: the SQL compiler refused it. SqlCompiled or later: accepted.

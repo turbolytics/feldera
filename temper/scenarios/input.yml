@@ -11,6 +11,7 @@
            input.rejects_nan, input.rejects_broken_json, input.errors]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
         results:

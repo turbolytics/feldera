@@ -16,6 +16,7 @@
   seed: 7
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {kafka: 1, feldera: 1}
     - oracle: [kafka, setup]
     - hold: {name: producer, oracle: [kafka, produce]}

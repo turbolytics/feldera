@@ -8,6 +8,7 @@
   covers: [pk.insert_overwrites, pk.delete_missing_ignored, pk.delete_by_key, pk.update_changes_columns, pk.update_missing_ignored, sql.primary_key]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
         results: {oracle: [pk, "{subject}"], decides: [pk.insert_overwrites, pk.delete_missing_ignored, pk.delete_by_key, pk.update_changes_columns, pk.update_missing_ignored, sql.primary_key]}

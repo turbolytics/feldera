@@ -8,6 +8,7 @@
   covers: [adhoc.consistent_snapshot, adhoc.only_materialized, sql.adhoc]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
         results: {oracle: [adhoc, "{subject}"], decides: [adhoc.consistent_snapshot, adhoc.only_materialized, sql.adhoc]}

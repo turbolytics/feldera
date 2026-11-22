@@ -45,8 +45,15 @@ services:
     build: {context: recipe/oracle}
     image: feldera-recipe-oracle
     command: ["true"]
+    # Lane results of the original harness (oracle/legacy.py), kept a few
+    # hours so the next subject's scenario reuses them.
+    volumes:
+      - legacy:/cache
 
 volumes:
   compiler:
     external: true
     name: temper-feldera-compiler
+  legacy:
+    external: true
+    name: temper-feldera-legacy

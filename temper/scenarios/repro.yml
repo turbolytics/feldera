@@ -17,6 +17,8 @@
   compose: temper/compose.yml
   covers: [operator.sum_partial_overflow]
   events:
+    - compiler_cache: []                            # the external volume compose.yml mounts
+    - compiler_prune: []
     - up: {feldera: 1}
     - check:
         covers: operator.sum_partial_overflow       # 1 when the pipeline stops or the SUM is wrong
@@ -34,6 +36,8 @@
   compose: temper/compose.yml
   covers: [view.matches_batch]
   events:
+    - compiler_cache: []                            # the external volume compose.yml mounts
+    - compiler_prune: []
     - up: {feldera: 1}
     - check:
         covers: view.matches_batch                  # (view, step) pairs that differ from SQL's answer

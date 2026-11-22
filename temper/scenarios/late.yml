@@ -11,12 +11,13 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.aggregate
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}
 
 - id: feldera.late_asof
   runner: temper
@@ -28,12 +29,13 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.asof
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}
 
 - id: feldera.late_hop
   runner: temper
@@ -45,12 +47,13 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.hop
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}
 
 - id: feldera.late_join
   runner: temper
@@ -62,12 +65,13 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.join
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}
 
 - id: feldera.late_subquery
   runner: temper
@@ -79,12 +83,13 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.subquery
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}
 
 - id: feldera.late_tumble
   runner: temper
@@ -96,12 +101,13 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.tumble
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}
 
 - id: feldera.late_window
   runner: temper
@@ -113,9 +119,10 @@
     the ad-hoc read and by its change stream, at 4 workers, then 1 and 8.
   subject: late.window
   compose: temper/compose.yml
-  covers: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]
+  covers: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
-        results: {oracle: [lateness, "{subject}"], decides: [view.lateness_preserves_output, late.changes_add_up, sql.lateness]}
+        results: {oracle: [legacy, "{subject}"], decides: [late.changes_add_up, view.lateness_preserves_output, sql.lateness]}

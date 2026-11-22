@@ -8,6 +8,7 @@
   covers: [now.increasing_utc, now.temporal_filter_advances, sql.now]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
         results: {oracle: [now, "{subject}"], decides: [now.increasing_utc, now.temporal_filter_advances, sql.now]}

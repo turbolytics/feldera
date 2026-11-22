@@ -9,7 +9,7 @@ answers:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses BOOLEAN.
-      proven_by: feldera.type_semantics/op.sum/types.operators/bool
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/bool
     i8: supported
     i16: supported
     i32: supported
@@ -26,85 +26,85 @@ answers:
       reason: >
         SUM takes a numeric argument. The compiler accepts a string by casting it to a
         number, so the operator sums numbers, not strings.
-      proven_by: feldera.type_semantics/op.sum/types.operators/varchar
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/varchar
     char:
       unsupported: true
       reason: >
         SUM takes a numeric argument. The compiler accepts a string by casting it to a
         number, so the operator sums numbers, not strings.
-      proven_by: feldera.type_semantics/op.sum/types.operators/char
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/char
     binary:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses BINARY(4).
-      proven_by: feldera.type_semantics/op.sum/types.operators/binary
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/binary
     varbinary:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses VARBINARY.
-      proven_by: feldera.type_semantics/op.sum/types.operators/varbinary
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/varbinary
     date:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses DATE.
-      proven_by: feldera.type_semantics/op.sum/types.operators/date
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/date
     time:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIME.
-      proven_by: feldera.type_semantics/op.sum/types.operators/time
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/time
     ts:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIMESTAMP.
-      proven_by: feldera.type_semantics/op.sum/types.operators/ts
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/ts
     tstz:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIMESTAMP WITH TIME ZONE.
-      proven_by: feldera.type_semantics/op.sum/types.operators/tstz
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/tstz
     uuid:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses UUID.
-      proven_by: feldera.type_semantics/op.sum/types.operators/uuid
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/uuid
     variant:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses VARIANT.
-      proven_by: feldera.type_semantics/op.sum/types.operators/variant
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/variant
     arr_int:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses INT ARRAY.
-      proven_by: feldera.type_semantics/op.sum/types.operators/arr_int
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/arr_int
     arr_str:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses VARCHAR ARRAY.
-      proven_by: feldera.type_semantics/op.sum/types.operators/arr_str
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/arr_str
     arr_ts:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses TIMESTAMP ARRAY.
-      proven_by: feldera.type_semantics/op.sum/types.operators/arr_ts
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/arr_ts
     arr_arr:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses BIGINT ARRAY ARRAY.
-      proven_by: feldera.type_semantics/op.sum/types.operators/arr_arr
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/arr_arr
     row:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses ROW(a INT NULL, b VARCHAR NULL).
-      proven_by: feldera.type_semantics/op.sum/types.operators/row
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/row
     arr_row:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses ROW(a INT NULL) ARRAY.
-      proven_by: feldera.type_semantics/op.sum/types.operators/arr_row
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/arr_row
     map:
       unsupported: true
       reason: >
         SUM takes a numeric argument (Aggregate Operations), and the compiler refuses MAP<VARCHAR, INT>.
-      proven_by: feldera.type_semantics/op.sum/types.operators/map
+      proven_by: feldera.type_semantics_sum/op.sum/types.operators/map

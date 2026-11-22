@@ -18,6 +18,7 @@
            sql.types, connector.http]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
         results: {oracle: [types, "{subject}"], decides: [types.contract/*, nulls.contract/*, sql.types, connector.http]}
@@ -38,6 +39,7 @@
            sql.types, connector.kafka]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - up: {kafka: 1}
     - check:

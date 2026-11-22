@@ -12,6 +12,7 @@
   covers: [pg.mirrors_view, connector.postgres]
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {postgres: 1, feldera: 1}
     - oracle: [pg, setup]
     - check: {covers: pg.mirrors_view, oracle: [pg, steps]}

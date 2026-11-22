@@ -1,58 +1,49 @@
 # Temper map for Feldera
 
 This map checks Feldera's documented guarantees in the open-source edition,
-0.383.0. The tests are black-box pytest in `testing/temper`.
+0.383.0. Every check runs as a Temper scenario (`temper/scenarios`) against a
+Docker Compose topology (`temper/compose.yml`): Feldera's pipeline manager,
+Kafka, PostgreSQL and a one-shot oracle that drives Feldera's REST API.
+
+The views, lateness, transaction and type-semantics scenarios run the original
+black-box tests (`testing/temper`) unchanged: `temper/recipe/oracle/legacy/` is
+a copy of them, and `oracle/legacy.py` calls each test and credits the claims
+its pytest marks name. `temper/REBUILD.md` records how the map moved onto
+scenarios and the cell-for-cell parity check against the original.
 
 ## Reproduce the findings
 
 Each finding is a scenario in `temper/scenarios/repro.yml`. One command
-reproduces it, with Docker and Temper installed
+reproduces it, with Docker and Temper 0.1.7 or later
 (`brew install turbolytics/tap/temper`, or
-`go install github.com/turbolytics/temper/cmd/temper@v0.1.5`):
+`go install github.com/turbolytics/temper/cmd/temper@v0.1.7`):
 
 ```sh
-temper scenarios run --scenario feldera.decimal_sum_overflow   # #8032
-temper scenarios run --scenario feldera.grouping_empty         # #8033
+temper scenarios run --scenario feldera.decimal_sum_overflow --build   # #8032
+temper scenarios run --scenario feldera.grouping_empty --build         # #8033
 ```
 
-Each starts the pipeline manager (`temper/compose.yml`), compiles a fresh
-pipeline, prints its verdict, and exits 1 when the bug reproduces. A run
-takes a few minutes, most of it the compile. The checks are in
-`temper/recipe/feldera_check.py`, standard-library Python: the grouping
-check computes SQL's answer for ROLLUP, CUBE and GROUPING SETS itself. The
-full log is in `.temper/scenarios/<scenario>/<subject>/run.log`.
+Each starts the pipeline manager, compiles a fresh pipeline, prints its
+verdict, and exits 1 when the bug reproduces. A run takes a few minutes, most
+of it the compile; `--build` builds the oracle image the first time. The checks
+are in `temper/recipe/oracle/feldera_check.py`, standard-library Python: the
+grouping check computes SQL's answer for ROLLUP, CUBE and GROUPING SETS itself.
+The full log is in `.temper/scenarios/<scenario>/<subject>/run.log`.
 
-## Setup
+## Run the whole map
 
 ```sh
-docker network create temper-feldera
-docker network create temper-feldera-ext
-docker run -d --name temper-feldera --network temper-feldera --memory 5g --cpus 8 \
-  -p 26080:8080 images.feldera.com/feldera/pipeline-manager:0.383.0
-docker run -d --name temper-feldera-kafka --network temper-feldera-ext --memory 1g -p 26092:29092 \
-  -e KAFKA_NODE_ID=1 -e KAFKA_PROCESS_ROLES=broker,controller \
-  -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093 -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER \
-  -e KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT \
-  -e KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092 \
-  -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:26092 \
-  -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT \
-  -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 -e KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1 \
-  -e KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1 apache/kafka:3.9.1
-docker network connect --alias kafka temper-feldera temper-feldera-kafka
-uv venv -p 3.12 .venv-temper
-docker run -d --name temper-feldera-pg --network temper-feldera --memory 512m -p 26432:5432 \
-  -e POSTGRES_PASSWORD=temper postgres:17
-uv pip install -p .venv-temper/bin/python feldera==0.383.0 duckdb pytest requests confluent-kafka \
-  'psycopg[binary]' temper-python
-temper clean && temper run --level oss -- .venv-temper/bin/pytest -q -p no:cacheprovider testing/temper
+temper clean
+temper run --level oss -- temper scenarios run --build
 temper matrix --all-levels
 ```
 
-Compiling each program takes about five minutes the first time. The session
-compiles all ten programs at once, and the stopped container keeps them, so
-later runs skip compiling. The types program is the largest and takes about
-17 minutes. Every pipeline keeps its own copy of its binary, so the Docker VM
-needs about 15 GB free during a run.
+The first run compiles every program, about an hour on a laptop. The compiler
+cache lives on the external volume `temper-feldera-compiler`, which each
+scenario creates and prunes (`compiler_prune` in `temper/commands.yml`), so
+the Docker VM needs about 15 GB free. The original tests' lane results are kept
+for six hours on the volume `temper-feldera-legacy`, so later subjects reuse a
+lane computed by an earlier one; each run's log says when it does.
 
 ## What the tests do
 

@@ -7,7 +7,8 @@
     offset). After every request, the operator's view is compared with a
     model of each type's equality classes and order from the docs, for three
     seeds at 4, 1 and 8 workers. Pairs the compiler refuses, SUM over a
-    non-numeric type and = between ROW values, are proven refused.
+    non-numeric type and = between ROW values, are proven refused. These
+    are the original harness's tests (testing/temper), run unchanged.
   compose: temper/compose.yml
   covers: [types.operators/bool, types.operators/i8, types.operators/i16, types.operators/i32, types.operators/i64, types.operators/u8, types.operators/u16, types.operators/u32, types.operators/u64, types.operators/real, types.operators/double, types.operators/dec, types.operators/varchar, types.operators/char, types.operators/binary, types.operators/varbinary, types.operators/date, types.operators/time, types.operators/ts, types.operators/tstz, types.operators/uuid, types.operators/variant, types.operators/arr_int, types.operators/arr_str, types.operators/arr_ts, types.operators/arr_arr, types.operators/row, types.operators/arr_row, types.operators/map,
            sql.type_semantics]
@@ -17,12 +18,37 @@
     op.join: {}
     op.min_max: {}
     op.order_by: {}
-    op.sum: {}
   events:
     - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
     - up: {feldera: 1}
     - check:
         results:
-          oracle: [type_ops, "{subject}"]
+          oracle: [legacy, "{subject}"]
           decides: [types.operators/*, sql.type_semantics]
+          exempts: [types.operators/*]
+
+- id: feldera.type_semantics_sum
+  runner: temper
+  name: Every numeric type sums by the docs inside SUM, and a SUM survives a partial overflow
+  description: >
+    The original harness's SUM tests (testing/temper/test_types_ops.py), run
+    unchanged: SUM over each numeric type's small value classes matches the
+    model at 1, 4 and 8 workers; SUM over a non-numeric type is refused, or,
+    for strings, compiles as a cast; and a SUM whose total fits its type
+    survives rows that pass the type's maximum on the way ("using higher
+    precision intermediate data types"). Its own scenario because
+    operator.sum_partial_overflow is op.sum's claim alone.
+  compose: temper/compose.yml
+  subject: op.sum
+  covers: [types.operators/arr_arr, types.operators/arr_int, types.operators/arr_row, types.operators/arr_str, types.operators/arr_ts, types.operators/binary, types.operators/bool, types.operators/char, types.operators/date, types.operators/dec, types.operators/double, types.operators/i16, types.operators/i32, types.operators/i64, types.operators/i8, types.operators/map, types.operators/real, types.operators/row, types.operators/time, types.operators/ts, types.operators/tstz, types.operators/u16, types.operators/u32, types.operators/u64, types.operators/u8, types.operators/uuid, types.operators/varbinary, types.operators/varchar, types.operators/variant,
+           sql.type_semantics, operator.sum_partial_overflow]
+  events:
+    - compiler_cache: []
+    - compiler_prune: []                            # per-program artifacts from earlier runs
+    - up: {feldera: 1}
+    - check:
+        results:
+          oracle: [legacy, "{subject}"]
+          decides: [types.operators/*, sql.type_semantics, operator.sum_partial_overflow]
           exempts: [types.operators/*]

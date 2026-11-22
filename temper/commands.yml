@@ -1,7 +1,20 @@
 commands:
   compiler_cache:
-    doc: Create the external volume that keeps Feldera's compiler cache across runs (idempotent).
-    host: [docker, volume, create, temper-feldera-compiler]
+    doc: "Create the external volumes: Feldera's compiler cache, and the original harness's lane results (idempotent)."
+    host: [sh, -c, "docker volume create temper-feldera-compiler >/dev/null && docker volume create temper-feldera-legacy"]
+  compiler_prune:
+    doc: >
+      Bound the compiler cache volume. Always delete what belongs to one
+      pipeline: its binary and its feldera_pipe_pipeline_* crate, keyed by a
+      pipeline id that is new every run. Keep the operator crates
+      (feldera_pipe_operator_<hash>): they are named by their code, so a later
+      program with the same operator reuses them. Cargo's copies of every
+      operator library at the top of target/optimized (libfeldera_pipe_*, about
+      2 GB per program) always go; cargo copies them again when it needs them.
+      Only when the volume passes 11 GB, delete the operator crates too, at the
+      cost of recompiling them.
+    host: [docker, run, --rm, -v, "temper-feldera-compiler:/c", alpine:3.20, sh, -c,
+           "cd /c/rust-compilation 2>/dev/null || exit 0; rm -rf pipeline-binaries/* target/optimized/feldera_pipe_pipeline_* target/optimized/libfeldera_pipe_* target/optimized/deps/*feldera_pipe_pipeline_*; if [ $(du -sm /c | cut -f1) -gt 11000 ]; then rm -rf target/optimized/deps/*feldera_pipe_operator_* target/optimized/build/feldera_pipe_*; echo pruned operator crates; fi; du -sh /c"]
   oracle:
     doc: Decide one area's claims for one subject; prints a results object.
     run: [oracle, python, -m, oracle]
