@@ -1,4 +1,5 @@
 """Feldera's REST API, the calls the scenarios use. Standard library only."""
+import decimal
 import json
 import sys
 import time
@@ -120,6 +121,7 @@ def query(name, sql):
     raw = call("GET", f"/pipelines/{name}/query", params={"sql": sql, "format": "json"}, timeout=120).strip()
     if not raw:
         return []
+    # Numbers with a fraction stay exact: a 38-digit DECIMAL is not a float.
     if raw.startswith("["):
-        return json.loads(raw)
-    return [json.loads(line) for line in raw.splitlines() if line.strip()]
+        return json.loads(raw, parse_float=decimal.Decimal)
+    return [json.loads(line, parse_float=decimal.Decimal) for line in raw.splitlines() if line.strip()]

@@ -161,13 +161,13 @@ def http(subject):
     name = "types_http"
     api.pipeline(name, f"CREATE TABLE wide (id INT NOT NULL, {COLS}) WITH ('materialized' = 'true');\n"
                        "CREATE MATERIALIZED VIEW wide_v AS SELECT * FROM wide;")
-    stream = Stream("wide_v", name)
+    stream = Stream("wide_v", name, normalize=False)
     stream.start()
     time.sleep(1)
     api.ingest(name, "wide", [{"insert": r} for r in rows()])
     time.sleep(2)
     t1, n1 = compare("ad-hoc", api.query(name, "SELECT * FROM wide"))
-    streamed = [json.loads(k) for k in stream.bag()[0]]
+    streamed = [json.loads(k, parse_float=decimal.Decimal) for k in stream.bag()[0]]
     t2, n2 = compare("change stream", streamed)
     return {m: t1[m] + t2[m] for m in TYPES}, {m: n1[m] + n2[m] for m in NULLS}
 
@@ -202,10 +202,13 @@ CREATE MATERIALIZED VIEW wide_v WITH ('connectors' = '[{{
         msg = c.poll(1.0)
         if msg is None or msg.error():
             continue
-        body = json.loads(msg.value())
-        for change in body if isinstance(body, list) else [body]:
-            if "insert" in change:
-                got.append(change["insert"])
+        for line in msg.value().decode().splitlines():
+            if not line.strip():
+                continue
+            body = json.loads(line, parse_float=decimal.Decimal)
+            for change in body if isinstance(body, list) else [body]:
+                if "insert" in change:
+                    got.append(change["insert"])
     c.close()
     api.log(f"Kafka: {len(got)} of {len(rows())} rows came back")
     return compare("Kafka", got)

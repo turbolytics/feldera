@@ -37,5 +37,8 @@
     - check: {covers: connector.kafka, oracle: [kafka, caught-up]}
     - check: {exempts: faults.contract/stop_and_resume, oracle: [kafka, graceful-stop-refused]}
     - check: {exempts: delivery.no_duplicates, oracle: [kafka, graceful-stop-refused]}
-    - exec: [feldera, sh, -c, "for p in /proc/[0-9]*; do grep -q local-runner $p/cmdline 2>/dev/null && kill -9 ${p#/proc/}; done; true"]
+    # SIGKILL the pipeline's process: the one whose executable lives under the
+    # local runner. Matching the executable, not the command line, keeps this
+    # shell from matching itself.
+    - exec: [feldera, sh, -c, "for p in /proc/[0-9]*; do case $(readlink $p/exe 2>/dev/null) in *local-runner*) kill -9 ${p#/proc/};; esac; done"]
     - check: {exempts: faults.contract/process_kill, oracle: [kafka, kill-restarts-empty]}

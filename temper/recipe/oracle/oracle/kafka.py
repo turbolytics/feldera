@@ -58,8 +58,14 @@ def produce():
 def ids(topic, kind="insert"):
     """Every id in a topic, read from the beginning to its current end."""
     from confluent_kafka import Consumer, TopicPartition
+    from confluent_kafka import KafkaException
     c = Consumer({"bootstrap.servers": BROKER, "group.id": f"oracle-{time.time()}", "enable.auto.commit": False})
-    lo, hi = c.get_watermark_offsets(TopicPartition(topic, 0), timeout=30)
+    try:
+        lo, hi = c.get_watermark_offsets(TopicPartition(topic, 0), timeout=30)
+    except KafkaException as e:
+        api.log(f"{topic}: no offsets yet ({e})")
+        c.close()
+        return set()
     c.assign([TopicPartition(topic, 0, lo)])
     out = set()
     pos = lo
@@ -70,10 +76,13 @@ def ids(topic, kind="insert"):
         if msg.error():
             continue
         pos = msg.offset() + 1
-        body = json.loads(msg.value())
-        for change in body if isinstance(body, list) else [body]:
-            if kind in change:
-                out.add(change[kind]["id"])
+        for line in msg.value().decode().splitlines():
+            if not line.strip():
+                continue
+            body = json.loads(line)
+            for change in body if isinstance(body, list) else [body]:
+                if kind in change:
+                    out.add(change[kind]["id"])
     c.close()
     return out
 
@@ -115,10 +124,17 @@ def kill_restarts_empty():
     api.log(f"after SIGKILL the pipeline is {st}: {json.dumps(err)[:300]}")
     api.call("POST", f"/pipelines/{NAME}/stop", params={"force": "true"})
     api.wait("the pipeline to stop", lambda: api.status(NAME)[0] == "Stopped", 120)
-    api.call("POST", f"/pipelines/{NAME}/start", params={"initial": "paused"})
-    api.wait("the pipeline to start", lambda: api.status(NAME)[0] == "Paused", 120)
+    # A pipeline stopped by an error starts again only once the error is dismissed.
+    api.call("POST", f"/pipelines/{NAME}/start", params={"initial": "paused", "dismiss_error": "true"})
+    def started():
+        p = api.get_json(f"/pipelines/{NAME}")
+        api.log(f"restart: deployment_status={p.get('deployment_status')} desired={p.get('deployment_desired_status')} "
+                f"storage={p.get('storage_status')} error={json.dumps(p.get('deployment_error'))[:160]}")
+        return p.get("deployment_status") in ("Paused", "Running")
+
+    api.wait("the pipeline to start", started, 300, 5)
     after = api.query(NAME, "SELECT COUNT(*) AS n FROM out")[0]["n"]
-    api.log(f"restarted after the kill with input paused: the view holds {after} rows")
+    api.log(f"restarted after the kill ({api.status(NAME)[0]}): the view holds {after} rows")
     return 0 if after == 0 else 1
 
 

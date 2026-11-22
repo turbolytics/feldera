@@ -184,11 +184,14 @@ def reference(state, view, spec=None):
 class Stream(threading.Thread):
     """A view's HTTP change stream, summed into a bag of rows."""
 
-    def __init__(self, view, name=NAME):
+    def __init__(self, view, name=NAME, normalize=True):
         super().__init__(daemon=True)
         self.view, self.name, self.rows, self.lock, self.err = view, name, {}, threading.Lock(), None
         # How many delivery messages carried changes, for transactions.
         self.messages = 0
+        # normalize keys rows the way the views compare them (whole-second
+        # timestamps); the types check needs the exact values instead.
+        self.key = (lambda v: norm(v)) if normalize else (lambda v: v)
 
     def run(self):
         url = f"{api.API}/pipelines/{self.name}/egress/{self.view}?format=json&array=true"
@@ -199,7 +202,7 @@ class Stream(threading.Thread):
                     line = line.strip()
                     if not line:
                         continue
-                    msg = json.loads(line)
+                    msg = json.loads(line, parse_float=decimal.Decimal)
                     if msg.get("json_data"):
                         with self.lock:
                             self.messages += 1
@@ -207,7 +210,7 @@ class Stream(threading.Thread):
                         with self.lock:
                             for kind, sign in (("insert", 1), ("delete", -1)):
                                 if kind in change:
-                                    key = json.dumps({k: norm(v) for k, v in change[kind].items()}, sort_keys=True, default=str)
+                                    key = json.dumps({k: self.key(v) for k, v in change[kind].items()}, sort_keys=True, default=str)
                                     self.rows[key] = self.rows.get(key, 0) + sign
         except Exception as e:  # the stream ends when the pipeline stops
             self.err = e
